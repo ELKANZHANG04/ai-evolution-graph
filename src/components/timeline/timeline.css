@@ -1,0 +1,467 @@
+/* ==========================================================================
+   时间轴主视图（TimelineCanvas）与移动端时间轴（MobileTimeline）
+   所有类名以 tl- / mobile-timeline 前缀，颜色只用 global.css 的 CSS 变量。
+   ========================================================================== */
+
+/* ---------- 画布容器：铺满 .timeline-stage ---------- */
+
+.tl-root {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tl-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.tl-root.is-dragging,
+.tl-root.is-dragging .tl-svg,
+.tl-root.is-dragging .tl-block {
+  cursor: grabbing;
+}
+
+/* ---------- 块 ---------- */
+
+.tl-block {
+  cursor: pointer;
+  outline: none;
+}
+
+.tl-block-fill {
+  transition:
+    fill 160ms ease,
+    fill-opacity 160ms ease,
+    stroke 160ms ease,
+    filter 160ms ease;
+}
+
+.tl-block:hover .tl-block-fill,
+.tl-block:focus-visible .tl-block-fill {
+  stroke: rgba(255, 255, 255, 0.65);
+  stroke-width: 1.5px;
+}
+
+.tl-block:hover .tl-block-fill {
+  filter: brightness(1.14);
+}
+
+.tl-block:focus-visible .tl-block-fill {
+  stroke: var(--accent);
+  stroke-width: 2px;
+}
+
+.tl-block.is-selected .tl-block-fill {
+  stroke: #ffffff;
+  stroke-width: 2px;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.55));
+}
+
+/* 图例隐藏的类别：只 dim、不重排，面积保持稳定 */
+.tl-block.is-dimmed .tl-block-fill {
+  fill-opacity: 0.06;
+}
+
+.tl-block.is-dimmed:hover .tl-block-fill {
+  fill-opacity: 0.2;
+}
+
+.tl-block.is-dimmed.is-selected .tl-block-fill {
+  fill-opacity: 0.32;
+}
+
+.tl-block-title {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke-linejoin: round;
+}
+
+.tl-block-importance {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+/* ---------- 底部年份轴 ---------- */
+
+.tl-baseline {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.tl-year-label {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  fill: var(--text-3);
+  pointer-events: none;
+  transition: fill 160ms ease;
+}
+
+.tl-year-label.is-active {
+  fill: var(--text);
+}
+
+/* 无数据年份：列内一条极淡的「—」，保持时间轴连续但不抢注意力 */
+.tl-year-gap {
+  fill: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* ---------- 悬浮控件（与 SVG 同容器、绝对定位） ---------- */
+
+.tl-overlay {
+  position: absolute;
+  z-index: 5;
+}
+
+.tl-yearbar {
+  top: 10px;
+  left: 10px;
+  width: max-content;
+  max-width: calc(100% - 168px);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(11, 14, 20, 0.72);
+  backdrop-filter: blur(8px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tl-yearbar::-webkit-scrollbar {
+  display: none;
+}
+
+.tl-year-chip {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  color: var(--text-3);
+  transition:
+    color 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease;
+}
+
+.tl-year-chip:hover {
+  color: var(--text);
+  background: var(--bg-elev-2);
+}
+
+.tl-year-chip.is-active {
+  color: var(--text);
+  background: var(--bg-elev-2);
+  border-color: var(--border-strong);
+}
+
+.tl-year-chip.is-empty {
+  opacity: 0.55;
+}
+
+.tl-year-chip.is-flash {
+  color: var(--accent);
+  background: rgba(110, 168, 254, 0.12);
+  border-color: rgba(110, 168, 254, 0.55);
+}
+
+.tl-zoom {
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(11, 14, 20, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.tl-zoom-btn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 22px;
+  border-radius: 5px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-2);
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    opacity 140ms ease;
+}
+
+.tl-zoom-btn:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--bg-elev-2);
+}
+
+.tl-zoom-btn:disabled {
+  opacity: 0.35;
+}
+
+.tl-zoom-value {
+  min-width: 40px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.tl-zoom-reset {
+  margin-left: 2px;
+  border-left: 1px solid var(--border);
+  border-radius: 0 5px 5px 0;
+  width: 26px;
+}
+
+/* ---------- Tooltip ---------- */
+
+.tl-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  max-width: 280px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: rgba(11, 14, 20, 0.96);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  animation: tl-tooltip-in 120ms ease-out;
+}
+
+.tl-tooltip-title {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.tl-tooltip-meta {
+  margin-top: 3px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.tl-tooltip-sep {
+  opacity: 0.6;
+}
+
+.tl-tooltip-cats {
+  margin-top: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 10px;
+  color: var(--text-2);
+}
+
+.tl-tooltip-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tl-tooltip-swatch {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+}
+
+.tl-tooltip-warn {
+  margin-top: 5px;
+  font-size: 10px;
+  color: var(--warn);
+}
+
+@keyframes tl-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- 空态 ---------- */
+
+.tl-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+/* ==========================================================================
+   移动端时间轴（< 768px 由页面切换）
+   ========================================================================== */
+
+.mobile-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 8px;
+}
+
+.mobile-timeline-year-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-timeline-year {
+  position: sticky;
+  top: calc(var(--header-h) + 2px);
+  z-index: 5;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 2px;
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  box-shadow: 0 8px 12px -10px rgba(0, 0, 0, 0.9);
+}
+
+.mobile-timeline-year-number {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.mobile-timeline-year-count {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--text-3);
+}
+
+.mobile-timeline-list {
+  display: grid;
+  gap: 8px;
+}
+
+.mobile-timeline-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  padding: 11px 12px 11px 13px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    opacity 140ms ease;
+}
+
+.mobile-timeline-card:hover,
+.mobile-timeline-card:active {
+  background: var(--bg-elev-2);
+  border-color: var(--border-strong);
+}
+
+.mobile-timeline-card.is-dimmed {
+  opacity: 0.35;
+}
+
+.mobile-timeline-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mobile-timeline-title {
+  flex: 1 1 auto;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.mobile-timeline-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 8px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.mobile-timeline-date {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.mobile-timeline-summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text-2);
+}
+
+.mobile-timeline-empty {
+  padding: 32px 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-block-fill,
+  .tl-year-label,
+  .tl-year-chip,
+  .tl-zoom-btn,
+  .mobile-timeline-card {
+    transition: none;
+  }
+
+  .tl-tooltip {
+    animation: none;
+  }
+}

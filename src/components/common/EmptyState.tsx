@@ -1,0 +1,13 @@
+export function EmptyState({ title, description }: { title: string; description?: string }) {
+  return (
+    <div className="empty-state">
+      <div className="empty-art" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+      <p className="empty-title">{title}</p>
+      {description && <p className="empty-desc">{description}</p>}
+    </div>
+  );
+}

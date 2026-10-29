@@ -1,0 +1,496 @@
+/* ==========================================================================
+   详情抽屉（EntryDrawer）+ 极简 Markdown（MarkdownLite）
+   类名以 drawer- 前缀，颜色只用 global.css 的 CSS 变量。
+   ========================================================================== */
+
+/* ---------- 遮罩 / 面板 ---------- */
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(4, 6, 10, 0.62);
+  backdrop-filter: blur(3px);
+  animation: drawer-fade-in 160ms ease-out;
+}
+
+.drawer-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(480px, 92vw);
+  height: 100dvh;
+  max-height: 100dvh;
+  background: var(--bg-elev);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: drawer-slide-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ---------- 标题区（sticky 在面板顶部） ---------- */
+
+.drawer-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px 12px;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-heading {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.drawer-title {
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.drawer-title-en {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-3);
+  overflow-wrap: anywhere;
+}
+
+.drawer-close {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-3);
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease;
+}
+
+.drawer-close:hover {
+  color: var(--text);
+  background: var(--bg-elev-2);
+  border-color: var(--border);
+}
+
+/* ---------- 内容区 ---------- */
+
+.drawer-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.drawer-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.drawer-date {
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.02em;
+}
+
+.drawer-summary {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.drawer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-section-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+}
+
+.drawer-section-title::before {
+  content: '';
+  width: 3px;
+  height: 11px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.drawer-significance {
+  padding: 10px 12px;
+  border-left: 2px solid rgba(110, 168, 254, 0.5);
+  border-radius: 0 8px 8px 0;
+  background: var(--bg-elev-2);
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--text-2);
+}
+
+/* quote 大字块（insight） */
+
+.drawer-quote {
+  margin: 0;
+  padding: 13px 14px;
+  border-left: 3px solid var(--accent-2);
+  border-radius: 0 10px 10px 0;
+  background: var(--bg-elev-2);
+}
+
+.drawer-quote-text {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.75;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.drawer-quote-meta {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+.drawer-quote-speaker {
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+/* 我的短评 */
+
+.drawer-comment {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text-2);
+  padding-left: 10px;
+  border-left: 2px solid var(--border-strong);
+}
+
+/* ---------- 极简 Markdown ---------- */
+
+.drawer-md {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-md-h2 {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.drawer-md-h3 {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.drawer-md-p {
+  font-size: 13px;
+  line-height: 1.85;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+.drawer-md-ul {
+  display: grid;
+  gap: 4px;
+  padding-left: 2px;
+}
+
+.drawer-md-li {
+  position: relative;
+  padding-left: 13px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text-2);
+}
+
+.drawer-md-li::before {
+  content: '·';
+  position: absolute;
+  left: 2px;
+  color: var(--accent);
+}
+
+.drawer-md-hr {
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- 来源 ---------- */
+
+.drawer-sources {
+  display: grid;
+  gap: 6px;
+}
+
+.drawer-sources li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.drawer-source-index {
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.drawer-sources a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+.drawer-source-arrow {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.drawer-muted {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* ---------- 关联条目 ---------- */
+
+.drawer-relations {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.drawer-rel-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.drawer-rel-label {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+
+.drawer-rel-list {
+  display: grid;
+  gap: 5px;
+}
+
+.drawer-rel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elev-2);
+  text-align: left;
+  font-size: 12.5px;
+  color: var(--text-2);
+  transition:
+    border-color 140ms ease,
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.drawer-rel:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--bg-elev);
+}
+
+.drawer-rel-flow {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.drawer-rel-arrow {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.drawer-rel-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-rel-type {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.drawer-rel-note {
+  margin: 4px 0 0 10px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+
+/* ---------- 底部操作栏 ---------- */
+
+.drawer-foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+
+.drawer-copy {
+  padding: 7px 14px;
+  border: 1px solid rgba(110, 168, 254, 0.45);
+  border-radius: 8px;
+  background: rgba(110, 168, 254, 0.12);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.drawer-copy:hover {
+  background: rgba(110, 168, 254, 0.2);
+}
+
+.drawer-copy.is-ok {
+  color: var(--ok);
+  border-color: rgba(61, 214, 140, 0.45);
+  background: rgba(61, 214, 140, 0.12);
+}
+
+.drawer-copy.is-fail {
+  color: var(--warn);
+  border-color: rgba(245, 165, 36, 0.45);
+  background: rgba(245, 165, 36, 0.12);
+}
+
+.drawer-foot-hint {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+/* ---------- 动画 ---------- */
+
+@keyframes drawer-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes drawer-slide-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* ---------- 移动端：全屏 ---------- */
+
+@media (max-width: 767px) {
+  .drawer-overlay {
+    justify-content: stretch;
+  }
+
+  .drawer-panel {
+    width: 100vw;
+    border-left: none;
+  }
+
+  .drawer-head {
+    padding: 14px 16px 10px;
+  }
+
+  .drawer-body {
+    padding: 14px 16px 20px;
+  }
+
+  .drawer-foot {
+    padding: 10px 16px;
+  }
+
+  .drawer-foot-hint {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer-overlay,
+  .drawer-panel {
+    animation: none;
+  }
+
+  .drawer-close,
+  .drawer-copy,
+  .drawer-rel {
+    transition: none;
+  }
+}
