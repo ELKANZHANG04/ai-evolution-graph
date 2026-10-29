@@ -16,7 +16,10 @@ tags: [falcon, tii, open-source, refinedweb]
 sources:
   - "https://arxiv.org/abs/2306.01116"
   - "https://huggingface.co/tiiuae/falcon-40b"
-relations: []
+relations:
+  - to: llama-2023
+    type: 竞争
+    note: "2023 年开放权重模型的同期竞争与互相追赶"
 needs_review: false
 node_kind: model
 ---

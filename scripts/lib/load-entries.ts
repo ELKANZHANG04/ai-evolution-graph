@@ -93,6 +93,10 @@ function parseEntryFile(absPath: string, file: string): LoadedEntry {
     thought_role: fm.thought_role,
     thought_claim: fm.thought_claim,
     thought_summary: fm.thought_summary,
+    innovation: fm.innovation,
+    maturity: fm.maturity,
+    why_underrated: fm.why_underrated,
+    thought_pin: fm.thought_pin,
     body: body || undefined,
   };
 

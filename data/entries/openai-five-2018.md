@@ -13,7 +13,8 @@ speaker: ""
 occasion: ""
 my_comment: "五个智能体学会打团战，比单智能体打游戏更接近真实世界的协作难题。"
 tags: [openai-five, dota2, reinforcement-learning, self-play]
-sources: []
+sources:
+  - "https://openai.com/index/openai-five/"
 relations:
   - to: "dqn-2015"
     type: "启发"

@@ -19,9 +19,9 @@ relations:
   - to: gpt-4-2023
     type: 竞争
     note: "Opus 在多项基准上对标并宣称超过 GPT-4"
-  - to: "claude-3-5-sonnet-2024"
-    type: "奠基"
-    note: "Claude 3.5 Sonnet 基于 Claude 3 系列"
+  - to: claude-2-2023
+    type: 基于
+    note: "Claude 3 是 Claude 2 的下一代，改为按能力分档的产品线"
 needs_review: false
 node_kind: model
 ---

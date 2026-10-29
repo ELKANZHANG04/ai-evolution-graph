@@ -17,8 +17,9 @@ sources:
   - "https://www.nature.com/articles/nature24270"
 relations:
   - to: alphago-2016
-    type: 奠基
-    note: "同团队后续工作：去掉人类棋谱与手工特征，是 AlphaGo 范式的自我对弈极简版"
+    type: 基于
+    note: "在 AlphaGo 的深度强化学习 + MCTS 范式上，去掉人类棋谱与手工特征做纯自我对弈"
+mainline: true
 needs_review: false
 node_kind: model
 ---

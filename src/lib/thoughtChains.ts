@@ -33,6 +33,42 @@ export const THOUGHT_CHAIN_CONFIGS: ThoughtChainConfig[] = [
     context: ['alexnet-2012', 'resnet-2015', 'transformer-2017', 'vit-2020'],
   },
   {
+    id: 'interaction',
+    title: '交互范式',
+    question: '人和 AI 的对话，必须是"轮流说话"吗？',
+    description:
+      '全双工、可被打断、主动插话——实时语音交互正在从回合制走向"持续共存"；对话行为本身也开始像提示词一样被控制。',
+    steps: [],
+    context: ['chatgpt-2022'],
+  },
+  {
+    id: 'generative-decision',
+    title: '生成式决策',
+    question: '计划一旦写下，就不能改吗？',
+    description:
+      '扩散语言模型把"计划"变成可编辑状态：新证据到来时只重建受影响的部分；agent 的推理路径与算力分配正在被重新设计。',
+    steps: [],
+    context: ['mcp-2024', 'o1-2024'],
+  },
+  {
+    id: 'memory',
+    title: '记忆与持续学习',
+    question: '模型如何记住，并持续变强？',
+    description:
+      '外挂记忆只是权宜之计；嵌套学习、睡眠时计算、持续学习架构都在尝试让模型"边用边学"，而不是停在训练截止日。',
+    steps: [],
+    context: ['gpt-4-2023'],
+  },
+  {
+    id: 'evaluation',
+    title: '评估与安全',
+    question: '如何审计越来越自主的系统？',
+    description:
+      'agent 审计 agent、可复现红队、可扩展监督：当系统能自己行动，评估本身也必须变成可并行、可复现的工程。',
+    steps: [],
+    context: ['eu-ai-act-2024'],
+  },
+  {
     id: 'scaling',
     title: '规模与泛化',
     question: '算力、数据与参数，能一直放大下去吗？',
@@ -163,8 +199,11 @@ export function buildThoughtChains(entries: readonly Entry[]): ThoughtChainData[
       extraCount += 1;
     }
 
-    // 配置步骤与自动补充条目合并后按时间排序，保证"演进顺序"永远正确
-    steps.sort((a, b) => a.entry.date.localeCompare(b.entry.date));
+    // 很新的路线置顶；其余按时间排序
+    const pinned = (step: ThoughtStepData) => (step.entry.thought_pin === 'top' ? 0 : 1);
+    steps.sort(
+      (a, b) => pinned(a) - pinned(b) || a.entry.date.localeCompare(b.entry.date),
+    );
 
     const context = config.context
       .map((id) => byId.get(id))

@@ -16,7 +16,13 @@ tags: [mistral, open-source, small-model, efficient-inference]
 sources:
   - "https://arxiv.org/abs/2310.06825"
   - "https://huggingface.co/mistralai/Mistral-7B-v0.1"
-relations: []
+relations:
+  - to: chinchilla-2022
+    type: 启发
+    note: "遵循「小尺寸 + 更多高质量数据」的 Chinchilla 式配方"
+  - to: llama-2-2023
+    type: 竞争
+    note: "Mistral 7B 以更小尺寸正面对标 Llama 2 13B"
 needs_review: false
 node_kind: model
 ---

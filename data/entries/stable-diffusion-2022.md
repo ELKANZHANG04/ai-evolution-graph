@@ -21,6 +21,7 @@ relations:
   - to: clip-2021
     type: 基于
     note: "使用 CLIP 类文本编码器（OpenCLIP ViT-L/14）把文本条件注入扩散模型"
+mainline: true
 needs_review: false
 node_kind: model
 ---

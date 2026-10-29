@@ -15,7 +15,9 @@
     "remove-entry": "tsx scripts/remove-entry.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "qa:ui": "node scripts/qa/check-ui.mjs"
+    "qa:ui": "node scripts/qa/check-ui.mjs",
+    "curate": "tsx scripts/curate.ts",
+    "curate:apply": "tsx scripts/curate.ts --apply"
   },
   "dependencies": {
     "d3-hierarchy": "^3.1.2",

@@ -19,6 +19,15 @@ relations:
   - to: transformer-2017
     type: 基于
     note: "采用 Transformer 解码器架构的稠密自回归语言模型"
+  - to: megatron-lm-2019
+    type: 基于
+    note: "沿用 Megatron-LM 的模型并行与训练栈扩展到 530B"
+  - to: gpt-3-2020
+    type: 启发
+    note: "延续 GPT-3 开启的稠密语言模型规模竞赛"
+  - to: a100-2020
+    type: 基于
+    note: "530B 模型在 NVIDIA A100 集群上训练"
 needs_review: false
 node_kind: model
 ---

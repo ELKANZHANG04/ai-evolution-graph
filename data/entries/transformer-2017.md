@@ -46,7 +46,10 @@ relations:
   - to: "seq2seq-2014"
     type: "启发"
     note: "Transformer 用注意力替代 RNN，接续 Seq2Seq 编码器-解码器思路"
-mainline: true
+  - to: resnet-2015
+    type: 启发
+    note: "采用 ResNet 式残差连接以稳定深层堆叠"
 needs_review: false
+mainline: true
 node_kind: paper
 ---

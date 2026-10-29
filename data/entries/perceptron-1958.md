@@ -13,8 +13,12 @@ speaker: ""
 occasion: ""
 my_comment: ""
 tags: [perceptron, neural-network, rosenblatt, history]
-sources: []
-relations: []
+sources:
+  - "https://doi.org/10.1037/h0042519"
+relations:
+  - to: backpropagation-1986
+    type: 奠基
+    note: "感知机把「从数据学习权重」变成可实现算法，多层网络的反向传播在此前身上发展"
 needs_review: true
 node_kind: paper
 ---

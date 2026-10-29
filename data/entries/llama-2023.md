@@ -19,10 +19,10 @@ relations:
   - to: transformer-2017
     type: 基于
     note: "采用 Transformer 解码器架构"
-  - to: "llama-2-2023"
-    type: "奠基"
-    note: "Llama 2 基于 Llama 1 开源权重"
-mainline: true
+  - to: chinchilla-2022
+    type: 启发
+    note: "采用「更小模型 + 更多高质量 token」的 Chinchilla 式配方"
 needs_review: false
+mainline: true
 node_kind: model
 ---

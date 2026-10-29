@@ -22,6 +22,12 @@ relations:
   - to: "claude-3-2024"
     type: "奠基"
     note: "Claude 3 是 Claude 1 的续代"
+  - to: gpt-4-2023
+    type: 竞争
+    note: "同日发布、定位直接对抗的通用助手"
+  - to: chatgpt-2022
+    type: 竞争
+    note: "ChatGPT 之后首个正面竞争的通用助手产品"
 needs_review: false
 node_kind: model
 ---

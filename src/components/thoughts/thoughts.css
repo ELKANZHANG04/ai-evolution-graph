@@ -125,6 +125,71 @@
   color: var(--accent);
 }
 
+/* 创新雷达 chip（粉点 + 粉计数） */
+.tb-radar-dot {
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #f472b6;
+  box-shadow: 0 0 6px rgba(244, 114, 182, 0.55);
+}
+
+.tb-filter-chip.is-radar .tb-filter-count {
+  color: #f472b6;
+  background: rgba(244, 114, 182, 0.12);
+}
+
+.tb-filter-chip.is-radar.is-active {
+  border-color: #f472b6;
+  color: #f472b6;
+  background: rgba(244, 114, 182, 0.08);
+}
+
+.tb-filter-chip.is-radar.is-active .tb-filter-count {
+  color: #f472b6;
+}
+
+/* 创新雷达模式说明 */
+.tb-radar-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: -14px;
+  padding: 9px 12px;
+  border: 1px solid rgba(244, 114, 182, 0.28);
+  border-radius: var(--radius);
+  background: rgba(244, 114, 182, 0.07);
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.tb-radar-hint strong {
+  color: #f472b6;
+  font-weight: 600;
+}
+
+.tb-radar-hint-dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: #f472b6;
+  box-shadow: 0 0 8px rgba(244, 114, 182, 0.6);
+}
+
+.tb-radar-empty {
+  padding: 22px 18px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--text-3);
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-align: center;
+}
+
 /* ---------- 主题分区 ---------- */
 
 .tb-theme {
@@ -215,7 +280,7 @@
   align-items: stretch;
   gap: 14px;
   min-width: 0;
-  padding: 8px 2px 10px;
+  padding: 12px 2px 10px;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: thin;
@@ -388,6 +453,120 @@
   line-height: 1.5;
   letter-spacing: 0.06em;
   color: var(--text-3);
+}
+
+/* ---------- 创新雷达标注（创新徽标 / 成熟度 / 新路线 / NEW） ---------- */
+
+.tb-pin {
+  position: absolute;
+  top: -9px;
+  right: 12px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #061018;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  box-shadow: 0 3px 10px rgba(110, 168, 254, 0.35);
+}
+
+.tb-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.tb-radar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 7px;
+  border: 1px solid rgba(244, 114, 182, 0.42);
+  border-radius: 999px;
+  background: rgba(244, 114, 182, 0.12);
+  color: #f472b6;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.7;
+  white-space: nowrap;
+}
+
+.tb-radar-badge::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.tb-maturity {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 7px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-2);
+  font-size: 10px;
+  line-height: 1.7;
+  white-space: nowrap;
+}
+
+.tb-maturity::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--tb-maturity-dot, var(--text-3));
+}
+
+.tb-maturity-paper {
+  --tb-maturity-dot: var(--text-3);
+}
+
+.tb-maturity-prototype {
+  --tb-maturity-dot: var(--accent);
+}
+
+.tb-maturity-product {
+  --tb-maturity-dot: var(--ok);
+}
+
+/* 复用全局 .badge-new，仅收紧尺寸 */
+.tb-new {
+  padding: 0 6px;
+  font-size: 9.5px;
+  line-height: 1.7;
+}
+
+.tb-underrated {
+  margin-top: 8px;
+  padding: 6px 9px;
+  border-left: 2px solid rgba(244, 114, 182, 0.45);
+  border-radius: 0 6px 6px 0;
+  background: rgba(244, 114, 182, 0.06);
+  color: var(--text-3);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.tb-underrated-label {
+  color: var(--text-2);
+  font-weight: 600;
 }
 
 /* ---------- 思想优先：主张 / 概括 / 出处 ---------- */
@@ -638,7 +817,7 @@
     align-items: stretch;
     gap: 0;
     overflow: visible;
-    padding: 2px 0 4px;
+    padding: 12px 0 4px;
   }
 
   .tb-card {

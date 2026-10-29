@@ -15,8 +15,11 @@ my_comment: "日期采用 CASP14 结果公布的 2020-11-30，而 Nature 论文�
 tags: [alphafold, protein-folding, deepmind, casp14]
 sources:
   - "https://www.nature.com/articles/s41586-021-03819-2"
-relations: []
-mainline: true
+relations:
+  - to: alphafold-1-2018
+    type: 基于
+    note: "AlphaFold2 是 CASP13 版本之后的下一代，显著改进结构预测精度"
 needs_review: true
+mainline: true
 node_kind: model
 ---

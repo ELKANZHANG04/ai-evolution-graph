@@ -19,6 +19,9 @@ relations:
   - to: claude-3-2024
     type: 基于
     note: "Claude 3 系列的下一代中档模型"
+  - to: gpt-4o-2024
+    type: 竞争
+    note: "2024 年开发者最常对比的两款多模态旗舰"
 needs_review: false
 node_kind: model
 ---

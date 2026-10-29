@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CATEGORY_VALUES, ENTRY_TYPES, NODE_KINDS, RELATION_TYPES, THOUGHT_ROLES } from './types';
+import { CATEGORY_VALUES, ENTRY_TYPES, MATURITY_LEVELS, NODE_KINDS, RELATION_TYPES, THOUGHT_ROLES } from './types';
 
 const isoDate = z
   .string()
@@ -49,6 +49,10 @@ export const entryFrontmatterSchema = z.object({
   thought_role: z.enum(THOUGHT_ROLES).optional(),
   thought_claim: z.string().max(120).optional(),
   thought_summary: z.string().max(600).optional(),
+  innovation: z.boolean().optional(),
+  maturity: z.enum(MATURITY_LEVELS).optional(),
+  why_underrated: z.string().max(400).optional(),
+  thought_pin: z.enum(['top']).optional(),
 });
 
 export type EntryFrontmatter = z.infer<typeof entryFrontmatterSchema>;

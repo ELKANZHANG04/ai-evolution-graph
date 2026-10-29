@@ -15,7 +15,10 @@ my_comment: "今天所有大模型里的「注意力」都源出于此，只是�
 tags: [attention, neural-machine-translation, encoder-decoder, bahdanau]
 sources:
   - "https://arxiv.org/abs/1409.0473"
-relations: []
+relations:
+  - to: seq2seq-2014
+    type: 基于
+    note: "在 RNN 编码器–解码器上引入对齐注意力，修正定长语义向量的信息瓶颈"
 needs_review: false
 node_kind: paper
 ---

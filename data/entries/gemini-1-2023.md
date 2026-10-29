@@ -20,6 +20,12 @@ relations:
   - to: "gemini-1-5-2024"
     type: "奠基"
     note: "Gemini 1.5 为 Gemini 1 的升级"
+  - to: palm-2022
+    type: 基于
+    note: "PaLM 系列是 Gemini 的直接前身"
+  - to: gpt-4-2023
+    type: 竞争
+    note: "Gemini 1.0 Ultra 发布时直接对标 GPT-4"
 needs_review: false
 node_kind: model
 ---

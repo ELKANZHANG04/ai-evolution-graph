@@ -28,11 +28,14 @@
    - `sources` = 真实可访问 URL；无法确认 → 留空 + needs_review；
    - `type: insight` 必须写 quote / speaker / occasion + 300–800 字正文深度解读。
 4. **核验**：至少 1 个可信来源确认事实与日期；数字/版本号务必核对；拿不准就保留 needs_review。
-5. **校验 + 构建**：
+5. **校验 + 构建 + 主线治理**：
    ```bash
    npm run validate        # 0 error
    npm run data:build      # 编译 bundle
+   npm run curate:apply    # 候选晋升 + 满额末位淘汰（写 docs/reviews/curation-<date>.md）
+   npm run build
    ```
+   另：每日更新需额外做一次「创新信号扫描」（1–3 条 `innovation: true` 的 insight，字段见 DECISIONS §12.3）。
 6. **自动归位**：时间轴按 `date` 排序、按年分列、列内按 `importance` 降序 treemap 排布——不需要任何手工坐标。
 7. **汇报**：当天新增 N 条、其中待核对 M 条、覆盖类别、来源数。用户在界面顶部看到「更新于」与 NEW 标记。
 

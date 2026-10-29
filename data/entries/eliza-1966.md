@@ -13,8 +13,12 @@ speaker: ""
 occasion: ""
 my_comment: ""
 tags: [eliza, chatbot, nlp, history]
-sources: []
-relations: []
+sources:
+  - "https://doi.org/10.1145/365153.365168"
+relations:
+  - to: chatgpt-2022
+    type: 奠基
+    note: "首个对话程序，确立「与机器对话」的交互原型"
 needs_review: true
 node_kind: concept
 ---

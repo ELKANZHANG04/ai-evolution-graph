@@ -352,3 +352,230 @@
     transform: none;
   }
 }
+
+/* ==========================================================================
+   v2：状态徽标 / 候选晋升池 / 创新雷达
+   ========================================================================== */
+
+.feed-stat-strong {
+  color: var(--text);
+}
+
+.feed-stat-warn {
+  color: var(--warn);
+}
+
+.feed-stat-accent {
+  color: var(--accent);
+}
+
+.feed-note-line {
+  padding: 2px 0 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+
+.feed-state-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.feed-state-badge.is-mainline {
+  color: #f5c542;
+  border-color: rgba(245, 197, 66, 0.45);
+  background: rgba(245, 197, 66, 0.12);
+}
+
+.feed-state-badge.is-candidate {
+  color: var(--accent);
+  border-color: rgba(110, 168, 254, 0.45);
+  background: rgba(110, 168, 254, 0.12);
+}
+
+.feed-state-badge.is-innovation {
+  color: #f472b6;
+  border-color: rgba(244, 114, 182, 0.45);
+  background: rgba(244, 114, 182, 0.12);
+}
+
+.feed-maturity-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  font-size: 9.5px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.feed-maturity-chip.is-inline {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.feed-added-date {
+  font-size: 10.5px;
+  color: var(--ok);
+  opacity: 0.85;
+}
+
+.feed-section-head {
+  flex-wrap: wrap;
+}
+
+.feed-section-note {
+  white-space: normal;
+  text-align: right;
+}
+
+.feed-section-link {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+  transition: color 140ms ease;
+}
+
+.feed-section-link:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* ---------- 创新雷达卡片 ---------- */
+
+.feed-innovation-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.feed-innovation {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.feed-innovation:hover {
+  transform: translateY(-1px);
+  background: var(--bg-elev-2);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.feed-innovation:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.feed-innovation-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.feed-innovation-date {
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+
+.feed-innovation-pin {
+  padding: 0 5px;
+  border: 1px solid rgba(244, 114, 182, 0.4);
+  border-radius: 4px;
+  font-size: 9.5px;
+  line-height: 1.5;
+  color: #f472b6;
+}
+
+.feed-innovation-claim {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.feed-innovation-why {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+.feed-innovation-source {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+
+/* ---------- v2 响应式 ---------- */
+
+@media (max-width: 900px) {
+  .feed-innovation-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .feed-meta {
+    gap: 16px;
+  }
+
+  .feed-section-note {
+    margin-left: 0;
+    width: 100%;
+    text-align: left;
+  }
+
+  .feed-section-link {
+    margin-left: 0;
+  }
+
+  .feed-innovation {
+    padding: 11px 12px 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-innovation {
+    transition: none;
+  }
+
+  .feed-innovation:hover {
+    transform: none;
+  }
+}

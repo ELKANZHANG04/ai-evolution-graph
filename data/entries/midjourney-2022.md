@@ -20,5 +20,8 @@ relations:
   - to: stable-diffusion-2022
     type: 竞争
     note: "同期文生图产品，分别代表闭源服务与开放权重两条路线"
+  - to: dalle-2-2022
+    type: 竞争
+    note: "2022 年文生图浪潮中同期竞争的两大产品"
 needs_review: false
 ---

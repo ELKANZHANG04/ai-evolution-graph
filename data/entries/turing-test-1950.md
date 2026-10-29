@@ -13,7 +13,8 @@ speaker: ""
 occasion: ""
 my_comment: ""
 tags: [turing-test, philosophy, ai-foundations, mind]
-sources: []
+sources:
+  - "https://doi.org/10.1093/mind/LIX.236.433"
 relations: []
 needs_review: true
 node_kind: paper

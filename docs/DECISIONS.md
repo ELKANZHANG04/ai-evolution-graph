@@ -287,3 +287,33 @@ M2.6 已交付（2026-10-29）：思想看板升级为 7 个主题（16 条引�
 ### 11.5 全量视图调整
 - 影响图谱节点排除 `type: insight`（言论进看板，不进图），减少噪音。
 - 时间轴保留全部（含思想条目），作为"全量数据"查阅。
+
+
+## 12. M3.5 动态化：最新动态 × 主线治理 × 创新雷达（2026-10-29 用户反馈）
+
+用户要求："最新动态就是要新，可以不足为奇；积累超过某数量就把重要的归类到主线，然后开始末位淘汰——这部分是搜集新闻、理解世界动向，是动态的，而不是历史书。创新雷达可以合并到思想看板并标注出来；很新的路就摆在当前思想主题第一个；和最新动态联动。"
+
+### 12.1 动态流（#/feed）
+- 定位：活新闻流 + 创新信号流；允许小新闻（importance 3–7），但必须真实、新鲜。
+- 排序：最近新增按 `added_at` 倒序；最新事件按 `date` 倒序（7/30/全部）。
+- 状态徽标：主线 / 候选晋升 / 创新 / 待核对 / NEW。
+- 页面展示：最近新增、最新事件（时间窗）、候选晋升池、创新雷达（联动思想看板）。
+- 数据要求：每日新增条目必须写 `added_at`（今天），未核实写 `needs_review: true`。
+
+### 12.2 主线动态化（晋升 / 末位淘汰）
+- 容量：`MAINLINE_CAP = 32`（src/lib/curation.ts）。
+- 晋升：重要度 ≥ 8、非主线、非待核对、非 insight 的事件（按重要度/日期排序）补入主线空位。
+- 淘汰：主线超过容量时，按重要度由低到高、同分按更早日期淘汰；**10 分条目永不淘汰**。
+- CLI：`npm run curate`（dry-run）/ `npm run curate:apply`（写入并产出 `docs/reviews/curation-<date>.md`）。
+- 每日更新任务（08:30）在入库后自动执行 `curate.ts --apply`，然后重建站点。
+
+### 12.3 创新雷达（并入思想看板）
+- 不单独成页；思想看板卡片加「创新雷达」徽标 + 成熟度（论文/原型/产品），筛选条加「创新雷达」chip。
+- 新增可选 frontmatter 字段：`innovation: true`、`maturity: paper|prototype|product`、`why_underrated`、`thought_pin: 'top'`。
+- 很新的路线：`thought_pin: 'top'` 置顶到所属思想主题第一条（builder 先置顶、再按日期）。
+- 新主题（11 个）：architecture / scaling / software / worldmodel / alignment / opensource / agents / **interaction 交互范式 / generative-decision 生成式决策 / memory 记忆与持续学习 / evaluation 评估与安全**。
+- 与动态联动：动态页展示最新创新条目；创新卡片显示 NEW（added_at 近 7 天）并可点开详情。
+- 采集：每日更新增加"低热度信号扫描"（arXiv/会议/官方研究博客），默认 needs_review。
+
+### 12.4 主题关系展示（下一步，方案已给）
+见 docs/PROPOSAL-M3.md：推荐「主题关系图 + 问题线」组合，待用户确认后实施。

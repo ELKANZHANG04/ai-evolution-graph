@@ -19,7 +19,13 @@ relations:
   - to: "vgg-2014"
     type: "启发"
     note: "ResNet 在 VGG 式深层网络基础上引入残差连接"
-mainline: true
+  - to: imagenet-2009
+    type: 基于
+    note: "以 ImageNet/ILSVRC 2015 为主要训练与评测基准"
+  - to: alexnet-2012
+    type: 基于
+    note: "沿用 AlexNet 之后的深层 CNN 路线，并解决更深网络的退化问题"
 needs_review: false
+mainline: true
 node_kind: paper
 ---

@@ -17,9 +17,9 @@ sources:
   - "https://arxiv.org/abs/2212.08073"
   - "https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback"
 relations:
-  - to: "claude-2023"
-    type: "奠基"
-    note: "Claude 采用 Constitutional AI 对齐路线"
+  - to: rlhf-instructgpt-2022
+    type: 基于
+    note: "宪法 AI 在 RLHF 基础上改用 AI 反馈（RLAIF）"
 needs_review: false
 node_kind: paper
 ---

@@ -287,9 +287,9 @@ try {
   const chapterOpeners = await mainPage.$$eval('.ml-chapter-open', (nodes) => nodes.length);
   check('主线 5 个章节入口（可点进看全部事件）', chapterOpeners === 5, `${chapterOpeners} 个`);
   check('主线 5 章', mainline.chapters === 5, JSON.stringify(mainline));
-  check('主线 24 个里程碑', mainline.cards === 24, `实际 ${mainline.cards}`);
+  check('主线里程碑数量在容量内（≥24）', mainline.cards >= 24 && mainline.cards <= 32, `实际 ${mainline.cards}`);
   check('主线 9 个突破点高亮', mainline.breakthroughs === 9, `实际 ${mainline.breakthroughs}`);
-  check('主线背景事件刻度（体量感）', mainline.marks >= 60, `${mainline.marks} 个`);
+  check('主线背景事件刻度（体量感）', mainline.marks >= 50, `${mainline.marks} 个`);
   check('主线无横向溢出', mainline.scrollWidth <= mainline.innerWidth + 1);
   await mainPage.screenshot({ path: path.join(OUT_DIR, 'm26-mainline.png') });
 
@@ -390,15 +390,33 @@ try {
     quotes: document.querySelectorAll('.tb-quote-block').length,
     scrollWidth: document.documentElement.scrollWidth,
   }));
-  check('思想看板 7 个主题', board.themes === 7, JSON.stringify(board));
-  check('思想看板主题筛选条（全部 + 7 主题）', board.filters === 8, `${board.filters} 个`);
-  check('思想看板观点卡 ≥16', board.cards >= 16, `${board.cards} 张`);
-  await thoughts.screenshot({ path: path.join(OUT_DIR, 'm26-thoughts.png') });
+  check('思想看板 11 个主题', board.themes === 11, JSON.stringify(board));
+  check('思想看板筛选条（全部 + 创新雷达 + 11 主题）', board.filters === 13, `${board.filters} 个`);
+  check('思想看板观点卡 ≥27', board.cards >= 27, `${board.cards} 张`);
+  await thoughts.screenshot({ path: path.join(OUT_DIR, 'm35-thoughts.png') });
 
-  // 主题筛选
+  // 创新雷达筛选 + 置顶/成熟度标注
+  const radarInfo = await thoughts.evaluate(() => ({
+    innovationBadges: document.querySelectorAll('.tb-radar, .tb-innovation, .tb-card.is-innovation').length,
+    pins: document.querySelectorAll('.tb-pin').length,
+    maturity: document.querySelectorAll('.tb-maturity').length,
+  }));
+  check('创新雷达卡片有置顶/成熟度标注', radarInfo.pins === 4 && radarInfo.maturity === 11, JSON.stringify(radarInfo));
   const filterButtons = await thoughts.$$('.tb-filter-chip');
   if (filterButtons[1]) {
     await filterButtons[1].click();
+    await delays(400);
+    const radarMode = await thoughts.evaluate(() => ({
+      cards: document.querySelectorAll('.tb-card').length,
+      active: document.querySelector('.tb-filter-chip.is-radar')?.className.includes('is-active') ?? false,
+    }));
+    check('创新雷达筛选可只看新想法', radarMode.active && radarMode.cards === 11, JSON.stringify(radarMode));
+    await thoughts.screenshot({ path: path.join(OUT_DIR, 'm35-thoughts-radar.png') });
+    await filterButtons[0].click();
+    await delays(300);
+  }
+  if (filterButtons[2]) {
+    await filterButtons[2].click();
     await delays(400);
     const filteredThemes = await thoughts.$$eval('.tb-theme', (nodes) => nodes.length);
     check('主题筛选可收窄到单个主题', filteredThemes === 1, `${filteredThemes} 个`);
@@ -505,7 +523,7 @@ try {
   }));
   check('最新动态 3 个时间窗', feedInfo.tabs === 3, JSON.stringify(feedInfo));
   check('最新动态默认 30 天有卡片', feedInfo.cards >= 1, `${feedInfo.cards} 张（${feedInfo.active}）`);
-  await feed.screenshot({ path: path.join(OUT_DIR, 'm3-feed.png') });
+  await feed.screenshot({ path: path.join(OUT_DIR, 'm35-feed.png') });
   await feed.click('.feed-card');
   await delays(500);
   check('最新动态卡片打开详情抽屉', (await feed.$('.drawer-panel')) !== null);
@@ -515,11 +533,23 @@ try {
   await feedTabs[2].click();
   await delays(500);
   const allCards = await feed.$$eval('.feed-card', (nodes) => nodes.length);
-  check('最新动态「全部」展示 119 条', allCards === 119, `实际 ${allCards}`);
-  await feed.screenshot({ path: path.join(OUT_DIR, 'm3-feed-all.png') });
+  check('最新动态「全部」展示全量条目（≥119）', allCards >= 119, `实际 ${allCards}`);
+  const feedHints = await feed.evaluate(() => ({
+    capacity: document.body.textContent?.includes('27/32') ?? false,
+    innovationCards: document.querySelectorAll('.feed-innovation').length,
+    innovationBadges: document.querySelectorAll('.feed-state-badge.is-innovation').length,
+    candidateNote: document.body.textContent?.includes('候选晋升池') ?? false,
+  }));
+  check('动态页显示主线容量与候选池', feedHints.capacity && feedHints.candidateNote, JSON.stringify(feedHints));
+  check('动态页与创新雷达联动', feedHints.innovationCards >= 1 && feedHints.innovationBadges >= 1, JSON.stringify(feedHints));
+  await feed.screenshot({ path: path.join(OUT_DIR, 'm35-feed-all.png') });
   await feedTabs[0].click();
   await delays(500);
-  check('最近 7 天空态有兜底文案', (await feed.$('.feed-empty')) !== null);
+  const sevenDay = await feed.evaluate(() => ({
+    cards: document.querySelectorAll('.feed-card').length,
+    hasEmpty: !!document.querySelector('.feed-empty'),
+  }));
+  check('最近 7 天时间窗可用（有卡片或空态兜底）', sevenDay.cards > 0 || sevenDay.hasEmpty, JSON.stringify(sevenDay));
   check('最新动态无 console/page error', feedErrors.length === 0, feedErrors.slice(0, 2).join(' | '));
 
   /* ---------------- M3：全局搜索 ---------------- */

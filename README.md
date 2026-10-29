@@ -39,6 +39,8 @@ npm run preview    # 本地预览构建产物
 | `npm run validate:strict` | CI 用：warning 也视为失败 |
 | `npm run add-entry` | 交互式新建一条条目（M4 完善中） |
 | `npm run remove-entry` | 删除/归档一条条目（M4 完善中） |
+| `npm run curate` | 主线治理 dry-run（候选晋升 / 末位淘汰方案） |
+| `npm run curate:apply` | 执行主线治理并写 `docs/reviews/` 记录 |
 | `npm test` | 单元测试（treemap 面积守恒等） |
 | `npm run typecheck` | TypeScript 类型检查 |
 
@@ -47,7 +49,8 @@ npm run preview    # 本地预览构建产物
 - `#/mainline`（默认）：只留 24 个里程碑，5 章纵向叙事；突破点金色高亮；其余 69 条事件压缩为背景刻度，可展开看标题。
 - `#/chapter?ch=<id>`：主题页——点进主线任一阶段看该主题**全部事件**，并可切「本章时间轴 / 本章影响图谱」（全量数据由此合并，不再单独占导航）。
 - `#/thoughts`：思想看板——7 个明确主题，每条链「命题 → 推进 → 修正/反驳」；卡片以一句话主张 + 思想概括为主，原文可展开，点开看完整论证。
-- `#/feed`：最新动态——7/30 天/全部时间窗，按事件日期倒序，NEW 角标，点击看详情。
+- `#/feed`：最新动态——活新闻流：最近新增 / 最新事件（7/30 天/全部）/ 候选晋升池 / 创新雷达；主线容量与晋升状态可见。
+- 主线动态化：`npm run curate`（dry-run）/ `npm run curate:apply` —— 重要新事件晋升主线，满额后按重要度末位淘汰（10 分永不淘汰）；每日更新任务会自动执行。
 - `#/search`：全局搜索——加权匹配 + 高亮片段 + 类别/年份/影响力组合筛选；页头搜索框按 `/` 聚焦。
 
 ## 目录结构

@@ -20,6 +20,9 @@ relations:
   - to: "ddpm-2020"
     type: "启发"
     note: "Imagen 采用扩散模型路线生成图像"
+  - to: t5-2019
+    type: 基于
+    note: "用冻结的 T5-XXL 作为文本编码器"
 needs_review: false
 node_kind: model
 ---

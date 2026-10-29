@@ -13,7 +13,8 @@ speaker: ""
 occasion: ""
 my_comment: ""
 tags: [dartmouth, ai-foundations, conference, history]
-sources: []
+sources:
+  - "http://www-formal.stanford.edu/jmc/history/dartmouth/dartmouth.html"
 relations: []
 needs_review: true
 node_kind: concept

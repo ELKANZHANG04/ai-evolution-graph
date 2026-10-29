@@ -19,6 +19,12 @@ relations:
   - to: "dqn-2015"
     type: "启发"
     note: "AlphaStar 沿用深度强化学习范式"
+  - to: alphago-zero-2017
+    type: 基于
+    note: "延续 AlphaGo Zero 的自我对弈强化学习范式"
+  - to: openai-five-2018
+    type: 竞争
+    note: "2018–2019 年两大 AI 游戏智能体项目同期竞争"
 needs_review: false
 node_kind: model
 ---

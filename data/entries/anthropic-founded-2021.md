@@ -13,7 +13,8 @@ speaker: ""
 occasion: ""
 my_comment: "一家公司把「安全」写进产品定位并活成了头部玩家，这本身就是对齐研究的一次规模化实验。"
 tags: [anthropic, founding, ai-safety, alignment]
-sources: []
+sources:
+  - "https://techcrunch.com/2021/05/28/anthropic-is-the-new-ai-research-outfit-from-openais-dario-amodei-and-it-has-124m-to-burn/"
 relations:
   - to: claude-3-2024
     type: 奠基

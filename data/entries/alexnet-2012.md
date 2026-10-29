@@ -15,8 +15,11 @@ my_comment: "同一套方法论随后在语音、翻译、检测上被反复复�
 tags: [alexnet, cnn, imagenet, gpu, deep-learning]
 sources:
   - "https://papers.nips.cc/paper_files/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html"
-relations: []
-mainline: true
+relations:
+  - to: backpropagation-1986
+    type: 基于
+    note: "深层 CNN 的端到端训练依赖反向传播"
 needs_review: true
+mainline: true
 node_kind: paper
 ---

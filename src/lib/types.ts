@@ -25,6 +25,10 @@ export type Category = (typeof CATEGORY_VALUES)[number];
 export const RELATION_TYPES = ['奠基', '基于', '启发', '竞争', '开源衍生', '人才流动'] as const;
 export type RelationType = (typeof RELATION_TYPES)[number];
 
+/** 创新雷达：成熟度 */
+export const MATURITY_LEVELS = ['paper', 'prototype', 'product'] as const;
+export type Maturity = (typeof MATURITY_LEVELS)[number];
+
 /** 思想链角色：命题 / 推进 / 修正 / 反驳 */
 export const THOUGHT_ROLES = ['thesis', 'advance', 'revision', 'rebuttal'] as const;
 export type ThoughtRole = (typeof THOUGHT_ROLES)[number];
@@ -77,6 +81,14 @@ export interface Entry {
   thought_claim?: string;
   /** 思想看板：2–3 句思想概括（卡片正文） */
   thought_summary?: string;
+  /** 创新雷达：是否标注为「值得关注的新想法」 */
+  innovation?: boolean;
+  /** 创新雷达：成熟度 */
+  maturity?: Maturity;
+  /** 创新雷达：为什么还没被充分重视 */
+  why_underrated?: string;
+  /** 思想看板：很新的路线，置顶到主题链最前 */
+  thought_pin?: 'top';
   /** Markdown 正文：思想的深度解读等，详情里展示 */
   body?: string;
 }
