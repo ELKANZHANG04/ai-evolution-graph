@@ -17,6 +17,7 @@ sources:
   - "https://ojs.aaai.org/index.php/AAAI/article/view/34665"
   - "https://doi.org/10.1609/aaai.v39i23.34665"
 relations: []
+added_at: 2026-10-29
 needs_review: false
 node_kind: paper
 innovation: true

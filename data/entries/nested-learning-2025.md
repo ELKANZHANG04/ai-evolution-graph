@@ -18,6 +18,7 @@ sources:
   - "https://research.google/blog/introducing-nested-learning-a-new-ml-paradigm-for-continual-learning/"
 relations: []
 thought_pin: top
+added_at: 2026-10-29
 needs_review: true
 node_kind: paper
 innovation: true

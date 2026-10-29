@@ -16,6 +16,7 @@ tags: [diffusion-lm, inference-efficiency, metacognition, agent]
 sources:
   - "https://arxiv.org/abs/2610.37642"
 relations: []
+added_at: 2026-10-29
 needs_review: false
 node_kind: paper
 innovation: true

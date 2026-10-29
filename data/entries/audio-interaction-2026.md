@@ -16,6 +16,7 @@ tags: [audio-interaction, always-on, proactive, speech]
 sources:
   - "https://arxiv.org/abs/2606.05121"
 relations: []
+added_at: 2026-10-29
 needs_review: false
 node_kind: paper
 innovation: true

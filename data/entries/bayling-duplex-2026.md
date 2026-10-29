@@ -17,6 +17,7 @@ sources:
   - "https://arxiv.org/abs/2606.14528"
   - "https://github.com/BayLing-Models/BayLing-Duplex"
 relations: []
+added_at: 2026-10-29
 needs_review: false
 node_kind: paper
 innovation: true

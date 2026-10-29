@@ -16,6 +16,7 @@ tags: [diffusion-lm, agent, planning, repair]
 sources:
   - "https://arxiv.org/abs/2610.10786"
 relations: []
+added_at: 2026-10-29
 needs_review: false
 node_kind: paper
 innovation: true

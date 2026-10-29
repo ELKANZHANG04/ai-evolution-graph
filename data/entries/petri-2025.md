@@ -18,6 +18,7 @@ sources:
   - "https://www.anthropic.com/research/petri-open-source-auditing"
   - "https://github.com/safety-research/petri"
 relations: []
+added_at: 2026-10-29
 needs_review: false
 node_kind: concept
 innovation: true

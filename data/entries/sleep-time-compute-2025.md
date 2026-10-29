@@ -20,6 +20,7 @@ relations:
   - to: o1-2024
     type: 启发
     note: "受 o1 类 test-time compute 路线启发，但把算力挪到查询到来之前"
+added_at: 2026-10-29
 needs_review: false
 node_kind: paper
 innovation: true

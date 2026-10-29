@@ -17,6 +17,7 @@ sources:
   - "https://arxiv.org/abs/2610.24717"
   - "https://github.com/Jaasssoooonnnnn/DiffuPlan"
 relations: []
+added_at: 2026-10-29
 needs_review: false
 node_kind: paper
 innovation: true
