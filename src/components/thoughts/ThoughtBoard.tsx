@@ -214,7 +214,7 @@ function ThemeSection({ chain, index, selectedId, onSelect }: ThemeSectionProps)
         </p>
       </header>
 
-      <div className="tb-track">
+      <div className="tb-track" ref={trackRef}>
         {chain.steps.length === 0 && <p className="tb-theme-empty">暂无条目，待补充</p>}
         {chain.steps.map((step, stepIndex) => (
           <Fragment key={step.entry.id}>

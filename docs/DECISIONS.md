@@ -261,11 +261,12 @@ export interface MobileInfluenceListProps {
 - 体量不消失：每章底部显示"另有 N 条背景事件"+ 极简刻度（hover 可看标题，点击可看详情），不抢主线焦点。
 - 交互：点击卡片开详情抽屉；键盘 Enter/Space；`sm` 以下单列。
 
-### 11.3 思想看板设计
-- 数据：`type: insight` 条目的可选字段 `thought_chain`（链 id）与 `thought_role`（thesis/advance/revision/rebuttal）；链配置在 `src/lib/thoughtChains.ts`（已含 4 条链：规模与泛化 / 软件形态 / 世界模型 vs 语言模型 / 开源与闭源）。
-- 渲染：桌面 4 列看板（平板 2 列、移动端单列）；每列一条链 = 标题 + 关键问题 + 纵向步骤卡片；步骤之间用带箭头的「推进/修正/反驳」连接；insight 卡片大字显示 quote 原文 + speaker + occasion + 解读摘要；事件类步骤用紧凑事件卡。
-- 链底部「相关模型实践」chips 可点击跳详情；点击任意卡片开详情抽屉。
-- 后续（M3）：按主题/人物/立场筛选。
+### 11.3 思想看板设计（v2，2026-10-29 用户反馈后升级）
+- 数据：`type: insight` 的可选字段 `thought_chain`（7 个主题 id）、`thought_role`（thesis/advance/revision/rebuttal）、`thought_claim`（一句话主张）、`thought_summary`（2–3 句概括）；主题与步骤配置在 `src/lib/thoughtChains.ts`（架构与范式 / 规模与泛化 / 软件形态 / 世界模型 vs 语言模型 / 对齐与安全 / 智能体与交互 / 开源与闭源）。
+- 布局：顶部 sticky 主题筛选条（全部 + 7 主题，单选可回退）；7 个纵向主题分区，每区 = 编号 + 标题 + 关键问题 + 主题概括 + 步骤横向链（4–5 步时横向滚动并有显式提示，≤900px 纵向 ↓）；步骤按日期排序，箭头取 step.arrow，角色色区分。
+- 卡片（思想优先）：主标题 = `thought_claim`（17px/700）→ `thought_summary`（13px，3 行）→ speaker/occasion（单行）→ **原文降级为 2 行斜体、可「展开原文」**（展开 8 行，不误触卡片点击）→「看详情 →」；事件/实践步骤用紧凑卡（标题 + 摘要，无原文区）。
+- 点击卡片/相关实践 chips 打开完整详情抽屉（原文、正文解读、来源、关联条目）。
+- 后续（M3）：按人物/立场筛选、继续补名言。
 
 ### 11.3.1 交付状态（2026-10-29）
 

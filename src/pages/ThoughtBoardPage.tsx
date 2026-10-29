@@ -32,7 +32,7 @@ export function ThoughtBoardPage({ route }: { route: HashRoute }) {
         <p className="mainline-kicker">IDEAS · 思想如何递进，又如何被推翻</p>
         <h1>思想看板</h1>
         <p className="mainline-sub">
-          不放进图里的那些话：每条链从「命题」出发，经过推进、修正或反驳。大字引用原文，说话人、场合与来源都标清楚。
+          不放进图里的那些话：每条链从「命题」出发，经过推进、修正或反驳。卡片以一句话主张 + 思想概括为主，原文可展开；点开是完整论证、出处与关联条目。
         </p>
         <dl className="thoughts-stats">
           <div>
