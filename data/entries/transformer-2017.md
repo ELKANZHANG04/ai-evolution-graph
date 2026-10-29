@@ -46,6 +46,7 @@ relations:
   - to: "seq2seq-2014"
     type: "启发"
     note: "Transformer 用注意力替代 RNN，接续 Seq2Seq 编码器-解码器思路"
+mainline: true
 needs_review: false
 node_kind: paper
 ---

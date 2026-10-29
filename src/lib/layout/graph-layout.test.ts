@@ -4,6 +4,8 @@ import {
   DEFAULT_PADDING_X,
   DEFAULT_WORLD_HEIGHT,
   DEFAULT_WORLD_WIDTH,
+  NODE_BASE_DIAMETER,
+  NODE_SIZE_PER_IMPORTANCE,
   getFocusChains,
   layoutFocusGraph,
   layoutGlobalGraph,
@@ -56,8 +58,9 @@ function toyGraph(): { nodes: GraphNode[]; edges: GraphEdge[] } {
 
 describe('nodeDiameter', () => {
   it('随 importance 线性增长并落在合理范围', () => {
-    expect(nodeDiameter(1)).toBeCloseTo(15.4, 5);
-    expect(nodeDiameter(10)).toBeCloseTo(46, 5);
+    // 用导出的常量推导，避免视觉调参（直径）时测试失配
+    expect(nodeDiameter(1)).toBeCloseTo(NODE_BASE_DIAMETER + NODE_SIZE_PER_IMPORTANCE, 5);
+    expect(nodeDiameter(10)).toBeCloseTo(NODE_BASE_DIAMETER + NODE_SIZE_PER_IMPORTANCE * 10, 5);
     expect(nodeDiameter(100)).toBeCloseTo(nodeDiameter(10), 5);
     expect(nodeDiameter(0)).toBeCloseTo(nodeDiameter(1), 5);
   });

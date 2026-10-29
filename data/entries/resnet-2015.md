@@ -19,6 +19,7 @@ relations:
   - to: "vgg-2014"
     type: "启发"
     note: "ResNet 在 VGG 式深层网络基础上引入残差连接"
+mainline: true
 needs_review: false
 node_kind: paper
 ---

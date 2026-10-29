@@ -31,7 +31,7 @@ export function GraphPage({ route }: { route: HashRoute }) {
   const counts = useMemo(() => countByCategory(ENTRIES), []);
   // 影响图谱只展示 2012 至今（奠基时代走时间轴折叠区，避免时间轴被 1950s 拉长）
   const graphNodes = useMemo<GraphNode[]>(
-    () => GRAPH.nodes.filter((node) => node.date >= '2012-01-01'),
+    () => GRAPH.nodes.filter((node) => node.date >= '2012-01-01' && node.type !== 'insight'),
     [],
   );
   const nodeIds = useMemo(() => new Set(graphNodes.map((node) => node.id)), [graphNodes]);

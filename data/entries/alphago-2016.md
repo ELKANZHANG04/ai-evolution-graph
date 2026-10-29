@@ -19,6 +19,7 @@ relations:
   - to: "dqn-2015"
     type: "启发"
     note: "AlphaGo 的深度强化学习路线受 DQN 启发"
+mainline: true
 needs_review: false
 node_kind: model
 ---

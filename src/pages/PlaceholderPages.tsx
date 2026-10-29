@@ -47,20 +47,3 @@ export function FeedPage() {
     />
   );
 }
-
-export function InsightsPage() {
-  return (
-    <Placeholder
-      title="思想库"
-      subtitle="type = insight 的卡片墙：观点原文、说话人、场合、来源，以及深度解读。"
-      milestone="M3"
-      plan={[
-        '观点原文大字排版，突出「谁在什么场合说了什么」',
-        '每条思想包含 300–800 字深度解读（背景 / 核心观点 / 为什么今天还要读）',
-        '关联到影响链条上的模型与产品，可一键跳转',
-        '每日更新优先收录新思想、新动向',
-      ]}
-      note="思想条目要细——这是本项目的价值重点之一。"
-    />
-  );
-}

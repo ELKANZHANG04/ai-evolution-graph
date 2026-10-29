@@ -256,6 +256,149 @@ try {
   await graphMobile.close();
 
 
+
+  /* ---------------- M2.5：主线（默认视图） ---------------- */
+  const mainPage = await browser.newPage();
+  await mainPage.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  const mainErrors = [];
+  mainPage.on('pageerror', (error) => mainErrors.push(error.message));
+  mainPage.on('console', (message) => {
+    if (message.type() === 'error') mainErrors.push(message.text());
+  });
+  await mainPage.goto(`${BASE}/#/mainline`, { waitUntil: 'networkidle0', timeout: 20000 });
+  await mainPage.waitForSelector('.ml-chapter', { timeout: 15000 });
+  await delays(600);
+  const mainline = await mainPage.evaluate(() => ({
+    chapters: document.querySelectorAll('.ml-chapter').length,
+    cards: document.querySelectorAll('.ml-card').length,
+    breakthroughs: document.querySelectorAll('.ml-card.is-breakthrough').length,
+    marks: document.querySelectorAll('.ml-marks button').length,
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+  }));
+  check('主线 5 章', mainline.chapters === 5, JSON.stringify(mainline));
+  check('主线 24 个里程碑', mainline.cards === 24, `实际 ${mainline.cards}`);
+  check('主线 9 个突破点高亮', mainline.breakthroughs === 9, `实际 ${mainline.breakthroughs}`);
+  check('主线背景事件刻度（体量感）', mainline.marks >= 60, `${mainline.marks} 个`);
+  check('主线无横向溢出', mainline.scrollWidth <= mainline.innerWidth + 1);
+  await mainPage.screenshot({ path: path.join(OUT_DIR, 'm25-mainline.png') });
+
+  // 仅看突破点
+  const toggle = await mainPage.$('.mainline-toggle');
+  if (toggle) {
+    await toggle.click();
+    await delays(400);
+    const afterToggle = await mainPage.$$eval('.ml-card', (nodes) => nodes.length);
+    check('仅看突破点后剩 9 张卡', afterToggle === 9, `实际 ${afterToggle}`);
+    await mainPage.screenshot({ path: path.join(OUT_DIR, 'm25-mainline-breakthrough.png') });
+    await toggle.click();
+    await delays(300);
+  }
+  // 卡片 → 抽屉
+  await mainPage.click('.ml-card');
+  await delays(500);
+  check('主线卡片打开详情抽屉', (await mainPage.$('.drawer-panel')) !== null);
+  await mainPage.keyboard.press('Escape');
+  await delays(300);
+  // 背景刻度 → 抽屉
+  const markCount = await mainPage.$$eval('.ml-marks button', (nodes) => nodes.length);
+  if (markCount > 0) {
+    await mainPage.click('.ml-marks button');
+    await delays(500);
+    check('背景刻度打开详情抽屉', (await mainPage.$('.drawer-panel')) !== null);
+    await mainPage.keyboard.press('Escape');
+    await delays(300);
+  }
+  check('主线无 console/page error', mainErrors.length === 0, mainErrors.slice(0, 2).join(' | '));
+
+  /* ---------------- M2.5：思想看板 ---------------- */
+  const thoughts = await browser.newPage();
+  await thoughts.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  const thoughtErrors = [];
+  thoughts.on('pageerror', (error) => thoughtErrors.push(error.message));
+  thoughts.on('console', (message) => {
+    if (message.type() === 'error') thoughtErrors.push(message.text());
+  });
+  await thoughts.goto(`${BASE}/#/thoughts`, { waitUntil: 'networkidle0', timeout: 20000 });
+  await thoughts.waitForSelector('.tb-board', { timeout: 15000 });
+  await delays(600);
+  const board = await thoughts.evaluate(() => ({
+    chains: document.querySelectorAll('.tb-chain').length,
+    steps: document.querySelectorAll('.tb-step').length,
+    quotes: document.querySelectorAll('.tb-insight-quote, .tb-step-insight').length,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  check('思想看板 4 条链', board.chains === 4, JSON.stringify(board));
+  check('思想看板步骤与引用卡', board.steps >= 12, `${board.steps} 步`);
+  await thoughts.screenshot({ path: path.join(OUT_DIR, 'm25-thoughts.png') });
+  await thoughts.click('.tb-step');
+  await delays(500);
+  check('思想卡片打开详情抽屉', (await thoughts.$('.drawer-panel')) !== null);
+  await thoughts.keyboard.press('Escape');
+  await delays(300);
+  check('思想看板无 console/page error', thoughtErrors.length === 0, thoughtErrors.slice(0, 2).join(' | '));
+
+  /* ---------------- M2.5：全量数据（tab 切换 + 旧链接兼容） ---------------- */
+  const explore = await browser.newPage();
+  await explore.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  await explore.goto(`${BASE}/#/timeline?entry=chatgpt-2022`, { waitUntil: 'networkidle0', timeout: 20000 });
+  await delays(800);
+  const legacy = await explore.evaluate(() => ({
+    hash: location.hash,
+    hasCanvas: !!document.querySelector('.tl-block'),
+    hasDrawer: !!document.querySelector('.drawer-panel'),
+  }));
+  check('旧深链 #/timeline 兼容并保留详情', legacy.hasCanvas && legacy.hasDrawer, JSON.stringify(legacy));
+  // 关掉抽屉遮罩，否则会拦截下方 tab 点击
+  await explore.keyboard.press('Escape');
+  await delays(400);
+  const graphTab = await explore.$('.explore-tabs .explore-tab:nth-child(2)');
+  if (graphTab) {
+    await graphTab.click();
+    await explore.waitForSelector('.im-root', { timeout: 15000 });
+    await delays(800);
+    const exploreGraph = await explore.evaluate(() => location.hash);
+    check('全量数据可切到影响图谱', exploreGraph.includes('mode=graph'), exploreGraph);
+    await explore.screenshot({ path: path.join(OUT_DIR, 'm25-explore-graph.png') });
+  }
+
+  /* ---------------- M2.5：移动端主线/看板 ---------------- */
+  const mainMobile = await browser.newPage();
+  await mainMobile.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  await mainMobile.goto(`${BASE}/#/mainline`, { waitUntil: 'networkidle0', timeout: 20000 });
+  await mainMobile.waitForSelector('.ml-card', { timeout: 15000 });
+  await delays(600);
+  const mobileMain = await mainMobile.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    cards: document.querySelectorAll('.ml-card').length,
+    cardsPerRow: (() => {
+      const cards = Array.from(document.querySelectorAll('.ml-card'));
+      if (cards.length < 2) return 1;
+      const tops = cards.slice(0, 6).map((card) => Math.round(card.getBoundingClientRect().top));
+      return tops.filter((top) => top === tops[0]).length;
+    })(),
+  }));
+  check('移动端主线单列且无溢出', mobileMain.scrollWidth <= 391 && mobileMain.cardsPerRow === 1, JSON.stringify(mobileMain));
+  await mainMobile.screenshot({ path: path.join(OUT_DIR, 'm25-mainline-mobile.png'), fullPage: false });
+  await mainMobile.close();
+
+  const thoughtsMobile = await browser.newPage();
+  await thoughtsMobile.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  await thoughtsMobile.goto(`${BASE}/#/thoughts`, { waitUntil: 'networkidle0', timeout: 20000 });
+  await thoughtsMobile.waitForSelector('.tb-board', { timeout: 15000 });
+  await delays(600);
+  const mobileThoughts = await thoughtsMobile.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    chains: document.querySelectorAll('.tb-chain').length,
+  }));
+  check('移动端思想看板无横向溢出', mobileThoughts.scrollWidth <= 391, JSON.stringify(mobileThoughts));
+  await thoughtsMobile.screenshot({ path: path.join(OUT_DIR, 'm25-thoughts-mobile.png') });
+  await thoughtsMobile.close();
+
+  await mainPage.close();
+  await thoughts.close();
+  await explore.close();
+
 } finally {
   await browser.close();
 }

@@ -16,6 +16,8 @@ tags: [bitter-lesson, scaling, reinforcement-learning, sutton]
 sources:
   - "http://www.incompleteideas.net/IncIdeas/BitterLesson.html"
 relations: []
+thought_chain: scaling
+thought_role: thesis
 needs_review: false
 node_kind: concept
 ---

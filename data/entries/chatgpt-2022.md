@@ -25,5 +25,6 @@ relations:
   - to: "character-ai-2022"
     type: "竞争"
     note: "消费级对话产品竞争"
+mainline: true
 needs_review: false
 ---

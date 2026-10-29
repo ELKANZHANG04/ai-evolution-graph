@@ -1,4 +1,4 @@
-export type ViewId = 'timeline' | 'graph' | 'feed' | 'insights' | 'about';
+export type ViewId = 'mainline' | 'explore' | 'thoughts' | 'feed' | 'about';
 
 export interface ViewMeta {
   id: ViewId;
@@ -8,10 +8,10 @@ export interface ViewMeta {
 }
 
 export const VIEWS: ViewMeta[] = [
-  { id: 'timeline', label: '演进时间轴', en: 'Timeline', hint: '块面积 = 影响力' },
-  { id: 'graph', label: '关系图谱', en: 'Graph', hint: '谁影响了谁' },
-  { id: 'feed', label: '最新动态', en: 'Feed', hint: '今天发生了什么' },
-  { id: 'insights', label: '思想库', en: 'Insights', hint: '值得记住的观点' },
+  { id: 'mainline', label: '主线', en: 'Mainline', hint: '5 个阶段 · 24 个里程碑 · 突破点' },
+  { id: 'explore', label: '全量数据', en: 'Explore', hint: '时间轴 / 影响图谱（107 条全量）' },
+  { id: 'thoughts', label: '思想看板', en: 'Ideas', hint: '思想如何递进与推翻' },
+  { id: 'feed', label: '最新动态', en: 'Feed', hint: '今天发生了什么（M3）' },
   { id: 'about', label: '关于', en: 'About', hint: '数据与评分标准' },
 ];
 
@@ -22,15 +22,23 @@ export interface RouteState {
   params: URLSearchParams;
 }
 
-/** 解析 #/timeline?entry=chatgpt-2022 形式的 hash 路由 */
+/** 旧深链兼容：#/timeline → #/explore?mode=timeline，#/graph → #/explore?mode=graph，#/insights → #/thoughts */
+const LEGACY: Record<string, { view: ViewId; mode?: string }> = {
+  timeline: { view: 'explore', mode: 'timeline' },
+  graph: { view: 'explore', mode: 'graph' },
+  insights: { view: 'thoughts' },
+};
+
+/** 解析 #/mainline?entry=chatgpt-2022 形式的 hash 路由 */
 export function parseHash(hash: string): RouteState {
   const raw = hash.replace(/^#/, '').replace(/^\//, '');
   const [pathPart, queryPart = ''] = raw.split('?');
-  const view = (pathPart || 'timeline').trim() as ViewId;
-  return {
-    view: VIEW_IDS.has(view) ? view : 'timeline',
-    params: new URLSearchParams(queryPart),
-  };
+  const params = new URLSearchParams(queryPart);
+  const path = (pathPart || 'mainline').trim();
+  const legacy = LEGACY[path];
+  const view: ViewId = legacy ? legacy.view : ((VIEW_IDS.has(path) ? path : 'mainline') as ViewId);
+  if (legacy?.mode && !params.get('mode')) params.set('mode', legacy.mode);
+  return { view, params };
 }
 
 export function buildHash(view: ViewId, params?: URLSearchParams | Record<string, string | undefined>): string {

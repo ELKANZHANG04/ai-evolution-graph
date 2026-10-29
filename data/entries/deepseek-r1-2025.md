@@ -20,6 +20,7 @@ relations:
   - to: o1-2024
     type: 启发
     note: "R1 的推理路线受 o1 类 test-time compute 范式启发，并以强化学习为主实现"
+mainline: true
 needs_review: false
 node_kind: model
 ---

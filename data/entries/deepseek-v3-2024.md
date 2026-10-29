@@ -23,6 +23,7 @@ relations:
   - to: "deepseek-r1-2025"
     type: "奠基"
     note: "DeepSeek-R1 以 DeepSeek-V3 为基座"
+mainline: true
 needs_review: false
 node_kind: model
 ---

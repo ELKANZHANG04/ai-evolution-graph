@@ -25,6 +25,10 @@ export type Category = (typeof CATEGORY_VALUES)[number];
 export const RELATION_TYPES = ['奠基', '基于', '启发', '竞争', '开源衍生', '人才流动'] as const;
 export type RelationType = (typeof RELATION_TYPES)[number];
 
+/** 思想链角色：命题 / 推进 / 修正 / 反驳 */
+export const THOUGHT_ROLES = ['thesis', 'advance', 'revision', 'rebuttal'] as const;
+export type ThoughtRole = (typeof THOUGHT_ROLES)[number];
+
 /** 图谱节点种类（可选字段；缺省时按 type/categories 派生） */
 export const NODE_KINDS = ['model', 'paper', 'company', 'person', 'concept'] as const;
 export type NodeKind = (typeof NODE_KINDS)[number];
@@ -63,6 +67,12 @@ export interface Entry {
   node_kind?: NodeKind;
   /** 入库日期（每日更新写入，用于 NEW 标记）；种子数据可缺省 */
   added_at?: string;
+  /** 是否进入「主线」视图（默认视图只展示精选项，其余作为背景） */
+  mainline?: boolean;
+  /** 思想看板：所属思想链（见 src/lib/thoughtChains.ts） */
+  thought_chain?: string;
+  /** 思想看板：在本链中的角色 */
+  thought_role?: ThoughtRole;
   /** Markdown 正文：思想的深度解读等，详情里展示 */
   body?: string;
 }

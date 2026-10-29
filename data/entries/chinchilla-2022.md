@@ -19,6 +19,7 @@ relations:
   - to: scaling-laws-2020
     type: 启发
     note: "对 Kaplan 等人缩放定律的修正与延续：同等算力下参数与 token 数应同步扩大"
+mainline: true
 needs_review: false
 node_kind: paper
 ---

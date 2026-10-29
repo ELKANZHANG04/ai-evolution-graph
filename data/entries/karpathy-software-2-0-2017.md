@@ -16,6 +16,8 @@ tags: [software-2-0, neural-networks, paradigm, karpathy]
 sources:
   - "https://medium.com/@karpathy/software-2-0-a64152b37c35"
 relations: []
+thought_chain: software
+thought_role: thesis
 needs_review: false
 node_kind: concept
 ---

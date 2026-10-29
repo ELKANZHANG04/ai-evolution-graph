@@ -22,6 +22,7 @@ relations:
   - to: "llama-2-2023"
     type: "奠基"
     note: "Llama 2 基于 Llama 1 开源权重"
+mainline: true
 needs_review: false
 node_kind: model
 ---

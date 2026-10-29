@@ -2,14 +2,14 @@ import { useHashRoute } from './hooks/useHashRoute';
 import { VIEWS } from './lib/hashRoute';
 import { META } from './lib/data';
 import { formatBuiltAt } from './lib/format';
-import { TimelinePage } from './pages/TimelinePage';
-import { GraphPage } from './pages/GraphPage';
+import { MainlinePage } from './pages/MainlinePage';
+import { ExplorePage } from './pages/ExplorePage';
+import { ThoughtBoardPage } from './pages/ThoughtBoardPage';
 import { AboutPage } from './pages/AboutPage';
-import { FeedPage, InsightsPage } from './pages/PlaceholderPages';
+import { FeedPage } from './pages/PlaceholderPages';
 
 const MILESTONES: Partial<Record<string, string>> = {
   feed: 'M3',
-  insights: 'M3',
 };
 
 export default function App() {
@@ -18,7 +18,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <a className="brand" href="#/timeline" aria-label="AI 演进图谱首页">
+        <a className="brand" href="#/mainline" aria-label="AI 演进图谱首页">
           <span className="brand-mark" aria-hidden="true">
             <i />
             <i />
@@ -52,16 +52,16 @@ export default function App() {
       </header>
 
       <main className="app-main">
-        {route.view === 'timeline' && <TimelinePage route={route} />}
-        {route.view === 'graph' && <GraphPage route={route} />}
+        {route.view === 'mainline' && <MainlinePage route={route} />}
+        {route.view === 'explore' && <ExplorePage route={route} />}
+        {route.view === 'thoughts' && <ThoughtBoardPage route={route} />}
         {route.view === 'feed' && <FeedPage />}
-        {route.view === 'insights' && <InsightsPage />}
         {route.view === 'about' && <AboutPage />}
       </main>
 
       <footer className="app-footer">
-        <span>数据源：data/entries/*.md · 构建期编译为静态 bundle · 计划每日增量更新</span>
-        <span className="mono">v0.1.0 · M1</span>
+        <span>数据源：data/entries/*.md · 构建期编译为静态 bundle · 每日增量更新</span>
+        <span className="mono">v0.3.0 · M2.5 主线改版</span>
       </footer>
     </div>
   );

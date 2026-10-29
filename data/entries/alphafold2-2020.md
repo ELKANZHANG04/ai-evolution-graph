@@ -16,6 +16,7 @@ tags: [alphafold, protein-folding, deepmind, casp14]
 sources:
   - "https://www.nature.com/articles/s41586-021-03819-2"
 relations: []
+mainline: true
 needs_review: true
 node_kind: model
 ---

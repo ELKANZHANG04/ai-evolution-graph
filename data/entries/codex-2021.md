@@ -19,6 +19,7 @@ relations:
   - to: gpt-3-2020
     type: 基于
     note: "在 GPT-3 基础上用公开代码数据继续训练"
+mainline: true
 needs_review: false
 node_kind: model
 ---

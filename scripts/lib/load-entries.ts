@@ -88,6 +88,9 @@ function parseEntryFile(absPath: string, file: string): LoadedEntry {
     needs_review: fm.needs_review,
     node_kind: fm.node_kind as NodeKind | undefined,
     added_at: fm.added_at,
+    mainline: fm.mainline ?? false,
+    thought_chain: fm.thought_chain,
+    thought_role: fm.thought_role,
     body: body || undefined,
   };
 

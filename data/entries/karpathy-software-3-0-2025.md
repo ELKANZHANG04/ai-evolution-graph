@@ -20,6 +20,8 @@ relations:
   - to: karpathy-software-2-0-2017
     type: 启发
     note: "在 Software 2.0 框架基础上提出 Software 3.0"
+thought_chain: software
+thought_role: advance
 needs_review: true
 node_kind: concept
 ---

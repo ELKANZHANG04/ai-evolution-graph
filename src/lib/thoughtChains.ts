@@ -1,0 +1,154 @@
+import type { Entry, ThoughtRole } from './types';
+
+/**
+ * 思想看板配置：每条链是一条"命题 → 推进 → 修正/反驳"的演进路径。
+ * 步骤可以引用 insight（大字引用原文）或 event/product（紧凑事件卡）；
+ * 条目的 thought_chain 字段与本配置一致时，会按日期自动追加到链尾。
+ */
+export interface ThoughtStepConfig {
+  entryId: string;
+  role: ThoughtRole;
+  /** 箭头文案（缺省按 role 生成） */
+  arrow?: string;
+}
+
+export interface ThoughtChainConfig {
+  id: string;
+  title: string;
+  question: string;
+  description: string;
+  steps: ThoughtStepConfig[];
+  /** 相关模型实践（链底部 chips） */
+  context: string[];
+}
+
+export const THOUGHT_CHAIN_CONFIGS: ThoughtChainConfig[] = [
+  {
+    id: 'scaling',
+    title: '规模与泛化',
+    question: '算力、数据与参数，能一直放大下去吗？',
+    description:
+      '从「通用方法 × 算力」的信念，到可预测的 Scaling Laws，再到 Chinchilla 对"数据配比"的修正，以及推理时计算的分叉——这是过去十年最主流的一条路线。',
+    steps: [
+      { entryId: 'sutton-bitter-lesson-2019', role: 'thesis' },
+      { entryId: 'scaling-laws-2020', role: 'advance', arrow: '实证化：loss 可预测' },
+      { entryId: 'chinchilla-2022', role: 'revision', arrow: '修正：数据也要等比放大' },
+      { entryId: 'o1-2024', role: 'advance', arrow: '分叉：把算力花在推理上' },
+    ],
+    context: ['gpt-3-2020', 'gpt-4-2023', 'deepseek-r1-2025'],
+  },
+  {
+    id: 'software',
+    title: '软件形态',
+    question: '写代码的下一层抽象是什么？',
+    description:
+      'Karpathy 用「Software 1.0 → 2.0 → 3.0」描述编程抽象的三次跃迁：从显式规则，到神经网络权重，再到自然语言意图。',
+    steps: [
+      { entryId: 'karpathy-software-2-0-2017', role: 'thesis' },
+      { entryId: 'karpathy-software-3-0-2025', role: 'advance', arrow: '升级：自然语言即程序' },
+    ],
+    context: ['codex-2021', 'cursor-2023'],
+  },
+  {
+    id: 'worldmodel',
+    title: '世界模型 vs 语言模型',
+    question: '通向通用智能，是理解世界，还是预测下一个 token？',
+    description:
+      'LeCun 主张必须建立可预测世界的内部模型；而自回归大模型路线用规模与数据给出了另一条反例——两条路线至今仍在拉扯。',
+    steps: [
+      { entryId: 'lecun-world-model-2022', role: 'thesis' },
+      { entryId: 'gpt-4-2023', role: 'rebuttal', arrow: '反例：自回归大模型路线胜出' },
+      { entryId: 'sora-2024', role: 'advance', arrow: '落地：视频生成的世界模拟' },
+    ],
+    context: ['gpt-4o-2024', 'o1-2024'],
+  },
+  {
+    id: 'opensource',
+    title: '开源与闭源',
+    question: '前沿能力应该开放吗？',
+    description:
+      'LLaMA 开启权重开放潮，DeepSeek 等开源模型持续逼近前沿；闭源厂商则把最强模型留在 API 后面——开源与闭源的分界线在不断移动。',
+    steps: [
+      { entryId: 'llama-2023', role: 'thesis' },
+      { entryId: 'deepseek-r1-2025', role: 'advance', arrow: '冲击：开源推理模型追平前沿' },
+      { entryId: 'gpt-5-2025', role: 'rebuttal', arrow: '回应：闭源继续守前沿' },
+    ],
+    context: ['mistral-7b-2023', 'qwen-2023', 'deepseek-v3-2024'],
+  },
+];
+
+export interface ThoughtStepData {
+  entry: Entry;
+  role: ThoughtRole;
+  arrow: string;
+}
+
+export interface ThoughtChainData extends Omit<ThoughtChainConfig, 'steps' | 'context'> {
+  steps: ThoughtStepData[];
+  context: Entry[];
+  /** 新条目（thought_chain 命中但未写进配置）自动追加的条数 */
+  extraCount: number;
+}
+
+const ROLE_ARROW: Record<ThoughtRole, string> = {
+  thesis: '命题',
+  advance: '推进',
+  revision: '修正',
+  rebuttal: '反驳',
+};
+
+export const ROLE_LABEL: Record<ThoughtRole, string> = {
+  thesis: '命题',
+  advance: '推进',
+  revision: '修正',
+  rebuttal: '反驳',
+};
+
+export function roleLabel(role: ThoughtRole): string {
+  return ROLE_LABEL[role] ?? role;
+}
+
+/** 构建思想看板数据：配置步骤 + 按 thought_chain 自动补充的条目 */
+export function buildThoughtChains(entries: readonly Entry[]): ThoughtChainData[] {
+  const byId = new Map(entries.map((entry) => [entry.id, entry]));
+  return THOUGHT_CHAIN_CONFIGS.map((config) => {
+    const configured = new Set(config.steps.map((step) => step.entryId));
+    const steps: ThoughtStepData[] = [];
+
+    for (const step of config.steps) {
+      const entry = byId.get(step.entryId);
+      if (!entry) continue;
+      steps.push({
+        entry,
+        role: step.role,
+        arrow: step.arrow ?? ROLE_ARROW[step.role],
+      });
+    }
+
+    const extras = entries
+      .filter(
+        (entry) =>
+          entry.thought_chain === config.id &&
+          !configured.has(entry.id) &&
+          (entry.thought_role ?? 'advance') !== 'thesis',
+      )
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    let extraCount = 0;
+    for (const entry of extras) {
+      const role = entry.thought_role ?? 'advance';
+      steps.push({ entry, role, arrow: ROLE_ARROW[role] });
+      extraCount += 1;
+    }
+
+    const context = config.context
+      .map((id) => byId.get(id))
+      .filter((entry): entry is Entry => entry !== undefined);
+
+    return { ...config, steps, context, extraCount };
+  });
+}
+
+export function thoughtChainCount(entries: readonly Entry[]): number {
+  return entries.filter((entry) => entry.type === 'insight').length;
+}

@@ -16,6 +16,8 @@ tags: [world-model, jepa, self-supervised, lecun]
 sources:
   - "https://openreview.net/forum?id=BZ5a1r-kVsf"
 relations: []
+thought_chain: worldmodel
+thought_role: thesis
 needs_review: false
 node_kind: person
 ---

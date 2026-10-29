@@ -22,6 +22,7 @@ relations:
   - to: "chatgpt-2022"
     type: "奠基"
     note: "ChatGPT 直接沿用 InstructGPT 的 RLHF 对齐方法"
+mainline: true
 needs_review: false
 node_kind: model
 ---

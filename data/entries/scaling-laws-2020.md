@@ -19,6 +19,7 @@ relations:
   - to: sutton-bitter-lesson-2019
     type: 启发
     note: "「通用方法 × 算力」的实证化；思想脉络上呼应《苦涩的教训》（非直接引用）"
+mainline: true
 needs_review: false
 node_kind: paper
 ---

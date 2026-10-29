@@ -237,3 +237,50 @@ export interface MobileInfluenceListProps {
 
 ### 10.5 后续（M3 之后）
 时间轴可选叠加「关系弧线」：默认视图也能看到连接（hover 块高亮弧线），作为 M2 之后的增强项，不阻塞当前里程碑。
+
+## 11. M2.5 信息架构改版：主线优先 × 思想看板（2026-10-29 用户反馈）
+
+用户试玩 M1/M2 后的反馈：
+> 事件的确很多，页面体量很大、重点不突出、文字看不见；想要思维导图或更好的交互逻辑，让主线、突破点很清楚；论文、思想演进和模型实践同样重要；科学家言论不用放在图里，用看板实现，体现前后人思想不断递进/推翻。
+
+### 11.1 新信息架构（导航）
+| 导航 | 路由 | 定位 |
+|---|---|---|
+| **主线**（默认） | `#/mainline` | 只讲大脉络：24 个里程碑 × 5 个章节，大卡片大字；突破点（≥9 分）高亮；其余事件压缩为章节底部背景刻度 |
+| 全量数据 | `#/explore?mode=timeline｜graph` | M1 时间轴与 M2 影响图谱降级为二级探索视图（保留全部交互） |
+| 思想看板 | `#/thoughts` | 言论/思想从图中移出：每条链"命题 → 推进 → 修正/反驳"，大字号引用原文 + 说话人 + 场合 |
+| 最新动态 | `#/feed` | M3 交付（7/30 天窗口） |
+| 关于 | `#/about` | 数据模型、评分、更新机制 |
+
+兼容旧深链：`#/timeline` → `#/explore?mode=timeline`，`#/graph` → `#/explore?mode=graph`。
+
+### 11.2 主线视图设计
+- 数据驱动：条目 frontmatter 增加可选 `mainline: true`（目前 24 条，见 data/entries），章节配置在 `src/lib/mainline.ts`（5 章：深度学习复兴 / Transformer 与预训练 / 规模化与大模型 / 生成式 AI 爆发 / 推理、开源与智能体）。
+- 纵向叙事：每章 = 章节标题 + 一句话概述 + 里程碑卡片网格（min 220px，标题 15px、意义 12.5px、限 2–3 行）；卡片含年份、类型徽标、影响力、类别 chips、与主线内其他节点的关系提示。
+- 突破点：importance ≥ 9 的卡片金色描边/光晕 + 「突破」角标；页面提供「仅看突破点」开关。
+- 体量不消失：每章底部显示"另有 N 条背景事件"+ 极简刻度（hover 可看标题，点击可看详情），不抢主线焦点。
+- 交互：点击卡片开详情抽屉；键盘 Enter/Space；`sm` 以下单列。
+
+### 11.3 思想看板设计
+- 数据：`type: insight` 条目的可选字段 `thought_chain`（链 id）与 `thought_role`（thesis/advance/revision/rebuttal）；链配置在 `src/lib/thoughtChains.ts`（已含 4 条链：规模与泛化 / 软件形态 / 世界模型 vs 语言模型 / 开源与闭源）。
+- 渲染：桌面 4 列看板（平板 2 列、移动端单列）；每列一条链 = 标题 + 关键问题 + 纵向步骤卡片；步骤之间用带箭头的「推进/修正/反驳」连接；insight 卡片大字显示 quote 原文 + speaker + occasion + 解读摘要；事件类步骤用紧凑事件卡。
+- 链底部「相关模型实践」chips 可点击跳详情；点击任意卡片开详情抽屉。
+- 后续（M3）：按主题/人物/立场筛选。
+
+### 11.3.1 交付状态（2026-10-29）
+
+M2.5 已交付：主线视图、思想看板、全量数据二级页、旧深链兼容；验收见 docs/M2.5-ACCEPTANCE.md。
+
+### 11.4 组件契约
+```ts
+// src/components/mainline/MainlineView.tsx（viz-engineer）
+{ chapters: MainlineChapterData[]; selectedId: string | null; breakthroughOnly: boolean; onSelect(entry: Entry): void }
+
+// src/components/thoughts/ThoughtBoard.tsx（board-engineer）
+{ chains: ThoughtChainData[]; selectedId: string | null; onSelect(entry: Entry): void }
+```
+文件归属：`src/components/mainline/**` 归 viz-engineer；`src/components/thoughts/**` 归 board-engineer；页面/路由/数据层/样式 tokens 归 Lead。
+
+### 11.5 全量视图调整
+- 影响图谱节点排除 `type: insight`（言论进看板，不进图），减少噪音。
+- 时间轴保留全部（含思想条目），作为"全量数据"查阅。
