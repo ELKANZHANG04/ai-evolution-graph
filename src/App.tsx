@@ -3,11 +3,11 @@ import { VIEWS } from './lib/hashRoute';
 import { META } from './lib/data';
 import { formatBuiltAt } from './lib/format';
 import { TimelinePage } from './pages/TimelinePage';
+import { GraphPage } from './pages/GraphPage';
 import { AboutPage } from './pages/AboutPage';
-import { FeedPage, GraphPage, InsightsPage } from './pages/PlaceholderPages';
+import { FeedPage, InsightsPage } from './pages/PlaceholderPages';
 
 const MILESTONES: Partial<Record<string, string>> = {
-  graph: 'M2',
   feed: 'M3',
   insights: 'M3',
 };
@@ -53,7 +53,7 @@ export default function App() {
 
       <main className="app-main">
         {route.view === 'timeline' && <TimelinePage route={route} />}
-        {route.view === 'graph' && <GraphPage />}
+        {route.view === 'graph' && <GraphPage route={route} />}
         {route.view === 'feed' && <FeedPage />}
         {route.view === 'insights' && <InsightsPage />}
         {route.view === 'about' && <AboutPage />}

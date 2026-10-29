@@ -15,7 +15,10 @@ my_comment: "一张 loss 对算力的对数直线图，比任何单点架构创�
 tags: [scaling-laws, power-law, compute, language-model]
 sources:
   - "https://arxiv.org/abs/2001.08361"
-relations: []
+relations:
+  - to: sutton-bitter-lesson-2019
+    type: 启发
+    note: "「通用方法 × 算力」的实证化；思想脉络上呼应《苦涩的教训》（非直接引用）"
 needs_review: false
 node_kind: paper
 ---

@@ -15,10 +15,7 @@ my_comment: "它常被简化为「堆算力」，但原文真正说的是：让�
 tags: [bitter-lesson, scaling, reinforcement-learning, sutton]
 sources:
   - "http://www.incompleteideas.net/IncIdeas/BitterLesson.html"
-relations:
-  - to: scaling-laws-2020
-    type: 启发
-    note: "「通用方法乘算力」的思想在次年 Scaling Laws 的实证结果中得到呼应"
+relations: []
 needs_review: false
 node_kind: concept
 ---

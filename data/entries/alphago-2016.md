@@ -15,7 +15,10 @@ my_comment: "AlphaGo 之后，围棋界与 AI 界的关系被永久改写：顶�
 tags: [alphago, reinforcement-learning, go, deepmind]
 sources:
   - "https://www.nature.com/articles/nature16961"
-relations: []
+relations:
+  - to: "dqn-2015"
+    type: "启发"
+    note: "AlphaGo 的深度强化学习路线受 DQN 启发"
 needs_review: false
 node_kind: model
 ---

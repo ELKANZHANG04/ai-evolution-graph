@@ -41,7 +41,7 @@ try {
   await delays(400);
 
   const blockCount = await page.$$eval('.tl-block', (nodes) => nodes.length);
-  check('时间轴渲染 22 个块', blockCount === 22, `实际 ${blockCount}`);
+  check('时间轴渲染 90+ 个块', blockCount >= 90, `实际 ${blockCount}`);
 
   const overflow = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
@@ -176,6 +176,86 @@ try {
   check('移动端点击卡片打开抽屉', mobileDrawer.title.length > 0, JSON.stringify(mobileDrawer));
   await mobile.screenshot({ path: path.join(OUT_DIR, 'm1-mobile-drawer.png'), fullPage: false });
   check('移动端无页面错误', mobileErrors.length === 0, mobileErrors.slice(0, 2).join(' | '));
+
+  /* ---------------- M2：奠基时代折叠区 ---------------- */
+  const desk = await browser.newPage();
+  await desk.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  const deskErrors = [];
+  desk.on('pageerror', (error) => deskErrors.push(error.message));
+  await desk.goto(`${BASE}/#/timeline`, { waitUntil: 'networkidle0', timeout: 20000 });
+  await delays(600);
+  const foundation = await desk.evaluate(() => {
+    const toggle = document.querySelector('.foundation-toggle');
+    return {
+      exists: !!toggle,
+      text: toggle?.textContent?.trim() ?? '',
+    };
+  });
+  check('奠基时代折叠区存在', foundation.exists && foundation.text.includes('奠基时代'), foundation.text);
+  if (foundation.exists) {
+    await desk.click('.foundation-toggle');
+    await delays(400);
+    const items = await desk.$$eval('.foundation-item', (nodes) => nodes.length);
+    check('奠基时代可展开（10 条简述）', items === 10, `${items} 条`);
+    await desk.screenshot({ path: path.join(OUT_DIR, 'm2-foundation.png') });
+    await desk.click('.foundation-item');
+    await delays(400);
+    check('点击奠基条目打开详情抽屉', (await desk.$('.drawer-panel')) !== null);
+    await desk.keyboard.press('Escape');
+    await delays(300);
+  }
+
+  /* ---------------- M2：影响图谱 ---------------- */
+  const graph = await browser.newPage();
+  await graph.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  const graphErrors = [];
+  graph.on('pageerror', (error) => graphErrors.push(error.message));
+  graph.on('console', (message) => {
+    if (message.type() === 'error') graphErrors.push(message.text());
+  });
+  await graph.goto(`${BASE}/#/graph`, { waitUntil: 'networkidle0', timeout: 20000 });
+  await graph.waitForSelector('.im-root', { timeout: 15000 });
+  await delays(1200);
+  const graphStats = await graph.evaluate(() => {
+    const stats = Array.from(document.querySelectorAll('.graph-stats dd')).map((node) => node.textContent?.trim() ?? '');
+    return { stats, hasChart: !!document.querySelector('.im-chart'), hasToolbar: !!document.querySelector('.im-toolbar') };
+  });
+  const nodeCount = Number(graphStats.stats[0] ?? 0);
+  check('影响图谱渲染 90+ 节点', graphStats.hasChart && nodeCount >= 90, JSON.stringify(graphStats.stats));
+  await graph.screenshot({ path: path.join(OUT_DIR, 'm2-graph-global.png') });
+
+  await graph.goto(`${BASE}/#/graph?focus=transformer-2017`, { waitUntil: 'networkidle0' });
+  await delays(1200);
+  const focusState = await graph.evaluate(() => ({
+    focusbar: document.querySelector('.im-focusbar')?.textContent?.trim() ?? '',
+    back: !!document.querySelector('.im-back-btn'),
+    hash: location.hash,
+  }));
+  check('聚焦思维导图模式生效', focusState.href !== '' && focusState.focusbar.includes('上游') && focusState.back, focusState.focusbar.slice(0, 50));
+  await graph.screenshot({ path: path.join(OUT_DIR, 'm2-graph-focus.png') });
+  if (focusState.back) {
+    await graph.click('.im-back-btn');
+    await delays(700);
+    const hashBack = await graph.evaluate(() => location.hash);
+    check('返回全局按钮生效', !hashBack.includes('focus='), hashBack);
+  }
+  check('影响图谱无 console/page error', graphErrors.length === 0, graphErrors.slice(0, 2).join(' | '));
+
+  const graphMobile = await browser.newPage();
+  await graphMobile.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  await graphMobile.goto(`${BASE}/#/graph`, { waitUntil: 'networkidle0', timeout: 20000 });
+  await delays(800);
+  const mobileGraph = await graphMobile.evaluate(() => ({
+    hasList: !!document.querySelector('.im-mobile'),
+    groups: document.querySelectorAll('.im-mobile-group').length,
+  }));
+  check('影响图谱移动端降级为影响链列表', mobileGraph.hasList, JSON.stringify(mobileGraph));
+  await graphMobile.screenshot({ path: path.join(OUT_DIR, 'm2-graph-mobile.png') });
+  await desk.close();
+  await graph.close();
+  await graphMobile.close();
+
+
 } finally {
   await browser.close();
 }

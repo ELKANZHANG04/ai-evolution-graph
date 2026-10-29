@@ -31,23 +31,6 @@ function Placeholder({ title, subtitle, milestone, plan, note }: PlaceholderProp
   );
 }
 
-export function GraphPage() {
-  return (
-    <Placeholder
-      title="关系图谱"
-      subtitle="力导向图：节点 = 事件 / 模型 / 论文 / 产品 / 公司 / 人物，边 = 关系。点击节点高亮完整上下游影响链。"
-      milestone="M2"
-      plan={[
-        '节点大小 = 影响力，颜色 = 类别，边线型 = 关系类型（基于/启发/竞争/开源衍生/人才流动）',
-        '点击 Transformer 自动高亮 BERT、GPT 系、ViT 等下游影响链',
-        '按年份 / 类别 / 关键词过滤；构建期预计算坐标，保证不抖动',
-        '移动端降级为影响链列表',
-      ]}
-      note="M1 先交付时间轴主视图与详情抽屉；关系图谱在 M2 上线。"
-    />
-  );
-}
-
 export function FeedPage() {
   return (
     <Placeholder

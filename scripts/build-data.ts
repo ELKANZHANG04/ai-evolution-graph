@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { nodeKindOf } from '../src/theme/categories';
 import type { Category, Entry, GraphData, Meta } from '../src/lib/types';
+import { RELATION_META } from '../src/theme/relations';
 import { crossCheck, ENTRIES_DIR, loadEntries, ROOT } from './lib/load-entries';
 
 const GENERATED_DIR = path.join(ROOT, 'src', 'generated');
@@ -73,18 +74,26 @@ function main(): void {
     nodes: entries.map((entry) => ({
       id: entry.id,
       title: entry.title,
+      date: entry.date,
       year: Number(entry.date.slice(0, 4)),
       importance: entry.importance,
       categories: entry.categories as Category[],
       type: entry.type,
       nodeKind: nodeKindOf(entry),
     })),
+    // 边方向归一化为「上游 → 下游」，供影响图谱直接使用（docs/DECISIONS.md §10.3）
     edges: entries.flatMap((entry) =>
-      entry.relations.map((relation) => ({
-        source: entry.id,
-        target: relation.to,
-        type: relation.type,
-      })),
+      entry.relations.map((relation) => {
+        const meta = RELATION_META[relation.type];
+        const isBackward = meta.direction === 'backward';
+        return {
+          source: isBackward ? relation.to : entry.id,
+          target: isBackward ? entry.id : relation.to,
+          type: relation.type,
+          direction: meta.direction,
+          bidirectional: meta.bidirectional ?? false,
+        };
+      }),
     ),
   };
 

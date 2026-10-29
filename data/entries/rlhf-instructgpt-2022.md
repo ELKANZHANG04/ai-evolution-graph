@@ -19,6 +19,9 @@ relations:
   - to: gpt-3-2020
     type: 基于
     note: "在 GPT-3 系列模型之上做指令微调与人类反馈强化学习"
+  - to: "chatgpt-2022"
+    type: "奠基"
+    note: "ChatGPT 直接沿用 InstructGPT 的 RLHF 对齐方法"
 needs_review: false
 node_kind: model
 ---

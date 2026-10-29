@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { FoundationStrip } from '../components/common/FoundationStrip';
 import { Legend } from '../components/common/Legend';
 import { EntryDrawer } from '../components/detail/EntryDrawer';
 import { MobileTimeline } from '../components/timeline/MobileTimeline';
@@ -14,7 +15,10 @@ export function TimelinePage({ route }: { route: HashRoute }) {
   const isMobile = useMediaQuery('(max-width: 767px)');
   const counts = useMemo(() => countByCategory(ENTRIES), []);
 
-  const span = yearSpan(ENTRIES);
+  // 奠基时代（< 2012）折叠，不铺进时间轴主体（需求硬性要求）
+  const timelineEntries = useMemo(() => ENTRIES.filter((entry) => entry.date >= '2012-01-01'), []);
+  const foundationEntries = useMemo(() => ENTRIES.filter((entry) => entry.date < '2012-01-01'), []);
+  const span = yearSpan(timelineEntries);
   const selectedId = route.params.get('entry');
   const selected = getEntryById(selectedId);
 
@@ -73,12 +77,14 @@ export function TimelinePage({ route }: { route: HashRoute }) {
         <p className="legend-hint">点击图例筛选 · 滚轮缩放 · 拖拽平移 · 点击块看详情</p>
       </section>
 
+      <FoundationStrip entries={foundationEntries} onSelect={selectEntry} />
+
       <section className={`timeline-stage${isMobile ? ' is-mobile' : ''}`} aria-label="演进时间轴">
         {isMobile ? (
-          <MobileTimeline entries={ENTRIES} hiddenCategories={hiddenCategories} onSelect={selectEntry} />
+          <MobileTimeline entries={timelineEntries} hiddenCategories={hiddenCategories} onSelect={selectEntry} />
         ) : (
           <TimelineCanvas
-            entries={ENTRIES}
+            entries={timelineEntries}
             hiddenCategories={hiddenCategories}
             selectedId={selectedId}
             onSelect={selectEntry}

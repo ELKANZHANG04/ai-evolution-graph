@@ -22,5 +22,8 @@ relations:
   - to: rlhf-instructgpt-2022
     type: 基于
     note: "采用 InstructGPT 的 RLHF 对齐方法训练对话模型"
+  - to: "character-ai-2022"
+    type: "竞争"
+    note: "消费级对话产品竞争"
 needs_review: false
 ---

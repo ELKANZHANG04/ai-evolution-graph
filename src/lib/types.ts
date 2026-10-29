@@ -84,6 +84,8 @@ export interface Meta {
 export interface GraphNode {
   id: string;
   title: string;
+  /** YYYY-MM-DD，图谱 x 轴按日期精确定位 */
+  date: string;
   year: number;
   importance: number;
   categories: Category[];
@@ -91,10 +93,24 @@ export interface GraphNode {
   nodeKind: NodeKind;
 }
 
+/**
+ * 关系边的方向语义（构建期归一化，供影响图谱使用）：
+ * - forward：subject 在上游（subject → target，影响力从 subject 流向 target）
+ * - backward：target 在上游（target → subject）
+ * - symmetric：双向（如竞争）
+ * 定义见 docs/DECISIONS.md §10。
+ */
+export type RelationDirection = 'forward' | 'backward' | 'symmetric';
+
 export interface GraphEdge {
+  /** 上游（影响力来源）节点 id */
   source: string;
+  /** 下游（被影响）节点 id */
   target: string;
   type: RelationType;
+  direction: RelationDirection;
+  /** 是否双向（竞争、部分人才流动） */
+  bidirectional?: boolean;
 }
 
 export interface GraphData {

@@ -170,6 +170,70 @@ export interface EntryDrawerProps {
 ## 9. 里程碑（M1 本轮）
 
 - M1：数据 schema + 构建管线 + 时间轴主视图 + 详情抽屉 + 22 条种子（20 核心 + 2 思想）+ 关于页基础版 + 图例/统计条；验收见根目录 `docs/M1-ACCEPTANCE.md`。
-- M2：80–120 条完整种子 + 14 条奠基简述 + 关系图谱 + 每日更新流程上线。
+- M2（已交付 2026-10-29）：107 条（97 + 10 奠基）+ **影响图谱（全局时间泳道 + 聚焦思维导图）** + 奠基时代折叠区 + 每日更新机制上线；验收见 docs/M2-ACCEPTANCE.md。
 - M3：最新动态 + 思想库 + 搜索与组合筛选 + 移动端打磨。
 - M4：CLI（add-entry/remove-entry/validate）+ 关于页完整版 + 部署配置 + CI + 1000 条压测 + 详情页二期。
+
+## 10. M2 升级：影响图谱（思维导图式）× 时间轴（2026-10-29 用户要求）
+
+用户追加："不局限于线性排列，将节点与节点之间的关系有意义的相互连接起来，像思维导图一样；界面可以放大缩小；节点模块可以点击进去看详情。"
+
+决策：**不做二选一，而是双视图互补**：
+
+### 10.1 时间轴（保留，默认）
+面积 = 影响力、密度节奏，是产品定位的核心，不替换。
+
+### 10.2 影响图谱（新增，导航第二项 `#/graph`）
+- **全局模式**：节点位置 `x = 时间（按日期在年份内插值）`，`y = 类别泳道（10 类固定顺序）`；节点面积 ∝ importance；关系连线带箭头（上游 → 下游）；支持滚轮缩放 0.4–3x、拖拽平移、重置/适配视图；hover 高亮邻接节点与边；点击节点 → 详情抽屉。
+- **聚焦模式（思维导图）**：点击节点或「以此为中心」后，该节点居中：上游（被依赖/被受启发/奠基来源）向左按跳数分层，下游（受其影响）向右按跳数分层，深度 1–2 跳；其余节点隐藏或淡化；可一路下钻；面包屑/「返回全局」退出。这是"思维导图"体验的核心。
+- 复用：同一份数据、`src/generated/graph.json`、类别图例筛选（隐藏类别淡化）、EntryDrawer、URL 深链（`#/graph?focus=transformer-2017&entry=berkeley-2018`）。
+- 实现：ECharts `graph` 按需引入（`layout: 'none'` + 构建期/前端预计算坐标 + `roam: true`）；布局是纯函数（`src/lib/layout/graph-layout.ts`），可单测。
+- 移动端：< 900px 降级为「影响链列表」（聚焦节点的上游/下游分组列表 + 可点击），并提示桌面体验更佳。
+
+### 10.3 关系方向语义（构建期归一化，硬性）
+| relations.type | 语义 | 边方向（source → target） |
+|---|---|---|
+| 基于 | 本条目基于目标 | target → 本条目 |
+| 启发 | 本条目受目标启发 | target → 本条目 |
+| 开源衍生 | 本条目衍生自目标 | target → 本条目 |
+| 奠基 | 本条目为目标奠基 | 本条目 → target |
+| 竞争 | 对称 | 双向 |
+| 人才流动 | 人才从本条目相关方流向目标 | 本条目 → target（标注） |
+
+> 数据自检注意：现有 22 条中有 2 处方向存疑（attention-2014→seq2seq-2014「基于」、sutton→scaling-laws「启发」），M2 数据整理时修正。
+
+### 10.4 关系视觉
+- 边颜色/线型 = 关系类型（基于 蓝实线、启发 紫虚线、竞争 红、开源衍生 绿点线、奠基 灰、人才流动 琥珀弧线），并配关系图例。
+- 箭头指向影响力方向；未聚焦时边的透明度低，hover/选中高亮 1–2 跳上下游闭包，其余淡化至 8%。
+
+
+### 10.6 M2 组件契约（GraphPage 已由 Lead 写好，props 必须严格匹配）
+
+```ts
+// src/components/graph/InfluenceMap.tsx（viz-engineer 负责）
+export interface InfluenceMapProps {
+  nodes: GraphNode[];              // src/generated/graph.json
+  edges: GraphEdge[];              // 已归一化为 上游→下游，direction/bidirectional 可用
+  hiddenCategories: Category[];    // 隐藏类别：节点/边淡化，不重排
+  selectedId: string | null;       // 当前详情抽屉条目
+  focusId: string | null;          // null=全局模式；非 null=聚焦思维导图模式
+  onSelect: (entryId: string) => void;   // 单击节点
+  onFocusChange: (entryId: string | null) => void; // 双击节点 / 返回全局
+}
+export function InfluenceMap(props: InfluenceMapProps): JSX.Element
+
+// src/components/graph/MobileInfluenceList.tsx（viz-engineer 负责）
+export interface MobileInfluenceListProps {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  focusId: string | null;
+  hiddenCategories: Category[];
+  onSelect: (entryId: string) => void;
+  onFocusChange: (entryId: string | null) => void;
+}
+```
+
+文件归属：`src/lib/layout/graph-layout.ts`（+test）、`src/components/graph/**` 归 viz-engineer；`src/pages/GraphPage.tsx`、`src/styles/app.css` 归 Lead。
+
+### 10.5 后续（M3 之后）
+时间轴可选叠加「关系弧线」：默认视图也能看到连接（hover 块高亮弧线），作为 M2 之后的增强项，不阻塞当前里程碑。

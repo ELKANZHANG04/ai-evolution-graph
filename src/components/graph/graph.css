@@ -1,0 +1,476 @@
+/* ==========================================================================
+   影响图谱（InfluenceMap + MobileInfluenceList）
+   类名前缀 im-，颜色只用 global.css 的 CSS 变量。
+   ========================================================================== */
+
+.im-root {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.im-chart {
+  position: absolute;
+  inset: 0;
+}
+
+.im-axis,
+.im-focus-guides {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* 顶部年份刻度与泳道辅助线 */
+.im-axis-year-line {
+  stroke: rgba(148, 163, 184, 0.09);
+  stroke-width: 1;
+}
+
+.im-axis-lane-line {
+  stroke: rgba(148, 163, 184, 0.08);
+  stroke-width: 1;
+  stroke-dasharray: 3 6;
+}
+
+.im-axis-year {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+.im-axis-lane {
+  font-size: 10px;
+  fill: var(--text-3);
+  opacity: 0.8;
+  letter-spacing: 0.02em;
+}
+
+.im-axis-lane.is-dimmed {
+  opacity: 0.3;
+}
+
+.im-focus-guide-line {
+  stroke: rgba(110, 168, 254, 0.16);
+  stroke-width: 1;
+  stroke-dasharray: 4 7;
+}
+
+.im-focus-guide-label {
+  font-size: 10px;
+  fill: var(--text-3);
+  letter-spacing: 0.05em;
+}
+
+/* 画布内悬浮控件 */
+.im-toolbar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.im-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(11, 14, 20, 0.76);
+  backdrop-filter: blur(8px);
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: nowrap;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.im-tool-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--bg-elev-2);
+}
+
+.im-focusbar {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 200px);
+  padding: 6px 8px 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(11, 14, 20, 0.78);
+  backdrop-filter: blur(8px);
+}
+
+.im-focusbar-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.im-focusbar-label strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.im-focusbar-counts {
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.im-back-btn {
+  flex: 0 0 auto;
+  padding: 4px 9px;
+  border-color: rgba(110, 168, 254, 0.4);
+  color: var(--accent);
+}
+
+.im-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  z-index: 4;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.im-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* ECharts 原生 tooltip 外壳保持透明，内容由 .im-tt 负责 */
+.im-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.im-tt {
+  max-width: 300px;
+  padding: 9px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: rgba(11, 14, 20, 0.96);
+  box-shadow: var(--shadow-md);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.im-tt-title {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.im-tt-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.im-tt-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 9px;
+  margin-top: 5px;
+}
+
+.im-tt-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-2);
+}
+
+.im-tt-cat i {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.im-tt-degree {
+  margin-top: 5px;
+  font-size: 10px;
+  color: var(--text-2);
+}
+
+.im-tt-hint {
+  margin-top: 5px;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+/* ==========================================================================
+   移动端影响链列表
+   ========================================================================== */
+
+.im-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px;
+}
+
+.im-mobile-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 36px 0;
+}
+
+.im-mobile-hint {
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--text-3);
+}
+
+.im-mobile-focus-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+}
+
+.im-mobile-focus-info {
+  min-width: 0;
+}
+
+.im-mobile-kicker {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.im-mobile-focus-title {
+  margin-top: 2px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.im-mobile-focus-meta {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.im-mobile-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.im-mobile-group-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.im-mobile-group-title::before {
+  content: '';
+  width: 3px;
+  height: 11px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.im-mobile-group-count {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-3);
+}
+
+.im-mobile-list {
+  display: grid;
+  gap: 8px;
+}
+
+.im-mobile-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.im-mobile-row.is-dimmed {
+  opacity: 0.38;
+}
+
+.im-mobile-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
+}
+
+.im-mobile-main:hover,
+.im-mobile-main:active {
+  background: var(--bg-elev-2);
+  border-color: var(--border-strong);
+}
+
+.im-mobile-row.is-focus-row .im-mobile-main {
+  border-color: rgba(110, 168, 254, 0.45);
+  background: rgba(110, 168, 254, 0.08);
+}
+
+.im-mobile-row-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.im-mobile-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 2px;
+}
+
+.im-mobile-title {
+  flex: 1 1 auto;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.im-mobile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 9px;
+  padding-left: 16px;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.im-mobile-rel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.im-mobile-rel i {
+  display: inline-block;
+  width: 10px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.im-mobile-hop {
+  opacity: 0.8;
+}
+
+.im-mobile-focus {
+  flex: 0 0 auto;
+  align-self: stretch;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg-elev-2);
+  font-size: 11px;
+  color: var(--text-2);
+  transition:
+    color 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.im-mobile-focus:hover {
+  color: var(--accent);
+  border-color: rgba(110, 168, 254, 0.45);
+}
+
+@media (max-width: 899px) {
+  .im-focusbar {
+    max-width: calc(100% - 24px);
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .im-hint {
+    display: none;
+  }
+
+  .im-focus-guide-label {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .im-tool-btn,
+  .im-mobile-main,
+  .im-mobile-focus {
+    transition: none;
+  }
+}

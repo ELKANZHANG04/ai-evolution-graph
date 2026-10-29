@@ -15,7 +15,10 @@ my_comment: "一个恒等映射的加法，换来的是整个领域对深度可�
 tags: [resnet, residual-connections, cnn, imagenet]
 sources:
   - "https://arxiv.org/abs/1512.03385"
-relations: []
+relations:
+  - to: "vgg-2014"
+    type: "启发"
+    note: "ResNet 在 VGG 式深层网络基础上引入残差连接"
 needs_review: false
 node_kind: paper
 ---
