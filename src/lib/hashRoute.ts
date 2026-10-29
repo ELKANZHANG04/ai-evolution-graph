@@ -1,4 +1,4 @@
-export type ViewId = 'mainline' | 'explore' | 'chapter' | 'thoughts' | 'feed' | 'about';
+export type ViewId = 'mainline' | 'explore' | 'chapter' | 'thoughts' | 'feed' | 'search' | 'about';
 
 export interface ViewMeta {
   id: ViewId;
@@ -14,7 +14,7 @@ export const VIEWS: ViewMeta[] = [
   { id: 'about', label: '关于', en: 'About', hint: '数据与评分标准' },
 ];
 
-const VIEW_IDS = new Set<string>([...VIEWS.map((view) => view.id), 'chapter', 'explore']);
+const VIEW_IDS = new Set<string>([...VIEWS.map((view) => view.id), 'chapter', 'explore', 'search']);
 
 export interface RouteState {
   view: ViewId;

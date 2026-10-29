@@ -84,3 +84,39 @@ export function incomingRelations(entry: Entry): RelatedItem[] {
   }
   return items;
 }
+
+/** 按事件日期取最近 N 天（用于「最新动态」时间窗） */
+export function entriesInLastDays(days: number, now: Date = new Date()): Entry[] {
+  const threshold = now.getTime() - days * 24 * 60 * 60 * 1000;
+  return ENTRIES.filter((entry) => {
+    const time = Date.parse(`${entry.date}T00:00:00Z`);
+    return Number.isFinite(time) && time >= threshold;
+  }).sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/** 最新事件日期（YYYY-MM-DD） */
+export function latestEntryDate(entries: readonly Entry[] = ENTRIES): string {
+  return entries.reduce((max, entry) => (entry.date > max ? entry.date : max), '');
+}
+
+/** 最近 N 天入库的条目（added_at 非空且新鲜；用于 NEW 角标/日报） */
+export function recentlyAdded(days = 7, now: Date = new Date()): Entry[] {
+  const threshold = now.getTime() - days * 24 * 60 * 60 * 1000;
+  return ENTRIES.filter((entry) => {
+    if (!entry.added_at) return false;
+    const time = Date.parse(`${entry.added_at}T00:00:00Z`);
+    return Number.isFinite(time) && time >= threshold;
+  }).sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/** 全库标签频次（搜索页热门标签用） */
+export function tagCloud(entries: readonly Entry[] = ENTRIES, limit = 16): Array<{ tag: string; count: number }> {
+  const counts = new Map<string, number>();
+  for (const entry of entries) {
+    for (const tag of entry.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
+    .slice(0, limit);
+}

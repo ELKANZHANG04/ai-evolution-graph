@@ -485,6 +485,105 @@ try {
   await thoughts.close();
   await explore.close();
 
+
+  /* ---------------- M3：最新动态 ---------------- */
+  const feed = await browser.newPage();
+  await feed.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  const feedErrors = [];
+  feed.on('pageerror', (error) => feedErrors.push(error.message));
+  feed.on('console', (message) => {
+    if (message.type() === 'error') feedErrors.push(message.text());
+  });
+  await feed.goto(`${BASE}/#/feed`, { waitUntil: 'networkidle0', timeout: 20000 });
+  await feed.waitForSelector('.feed-page', { timeout: 15000 });
+  await delays(700);
+  const feedInfo = await feed.evaluate(() => ({
+    tabs: document.querySelectorAll('.feed-tab').length,
+    active: document.querySelector('.feed-tab.is-active')?.textContent?.trim() ?? '',
+    cards: document.querySelectorAll('.feed-card').length,
+    hasEmpty: !!document.querySelector('.feed-empty'),
+  }));
+  check('最新动态 3 个时间窗', feedInfo.tabs === 3, JSON.stringify(feedInfo));
+  check('最新动态默认 30 天有卡片', feedInfo.cards >= 1, `${feedInfo.cards} 张（${feedInfo.active}）`);
+  await feed.screenshot({ path: path.join(OUT_DIR, 'm3-feed.png') });
+  await feed.click('.feed-card');
+  await delays(500);
+  check('最新动态卡片打开详情抽屉', (await feed.$('.drawer-panel')) !== null);
+  await feed.keyboard.press('Escape');
+  await delays(300);
+  const feedTabs = await feed.$$('.feed-tab');
+  await feedTabs[2].click();
+  await delays(500);
+  const allCards = await feed.$$eval('.feed-card', (nodes) => nodes.length);
+  check('最新动态「全部」展示 119 条', allCards === 119, `实际 ${allCards}`);
+  await feed.screenshot({ path: path.join(OUT_DIR, 'm3-feed-all.png') });
+  await feedTabs[0].click();
+  await delays(500);
+  check('最近 7 天空态有兜底文案', (await feed.$('.feed-empty')) !== null);
+  check('最新动态无 console/page error', feedErrors.length === 0, feedErrors.slice(0, 2).join(' | '));
+
+  /* ---------------- M3：全局搜索 ---------------- */
+  const search = await browser.newPage();
+  await search.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  const searchErrors = [];
+  search.on('pageerror', (error) => searchErrors.push(error.message));
+  search.on('console', (message) => {
+    if (message.type() === 'error') searchErrors.push(message.text());
+  });
+  await search.goto(`${BASE}/#/search?q=transformer`, { waitUntil: 'networkidle0', timeout: 20000 });
+  await search.waitForSelector('.search-result', { timeout: 15000 });
+  await delays(600);
+  const searchInfo = await search.evaluate(() => ({
+    results: document.querySelectorAll('.search-result').length,
+    marks: document.querySelectorAll('.search-result-snippet mark').length,
+    input: document.querySelector('.search-input')?.value ?? '',
+    stats: document.querySelector('.search-stats')?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
+  }));
+  check('搜索 q=transformer 有结果且高亮', searchInfo.results >= 10 && searchInfo.marks > 0 && searchInfo.input === 'transformer', JSON.stringify({ results: searchInfo.results, marks: searchInfo.marks }));
+  check('搜索结果统计（条数/耗时）', /条结果/.test(searchInfo.stats), searchInfo.stats.slice(0, 40));
+  await search.screenshot({ path: path.join(OUT_DIR, 'm3-search.png') });
+  await search.click('.search-result');
+  await delays(500);
+  check('搜索结果打开详情抽屉', (await search.$('.drawer-panel')) !== null);
+  await search.keyboard.press('Escape');
+  await delays(300);
+  // 组合筛选（URL 驱动）
+  await search.goto(`${BASE}/#/search?q=transformer&cat=model`, { waitUntil: 'networkidle0' });
+  await delays(700);
+  const filtered = await search.evaluate(() => ({
+    results: document.querySelectorAll('.search-result').length,
+    activeCats: document.querySelectorAll('.search-cat.is-active, .search-cats .is-active').length,
+  }));
+  check('搜索可组合类别筛选（结果收窄）', filtered.results > 0 && filtered.results < searchInfo.results, JSON.stringify(filtered));
+  // 空结果
+  await search.goto(`${BASE}/#/search?q=zzzzzz`, { waitUntil: 'networkidle0' });
+  await delays(700);
+  check('搜索无结果有空态', (await search.$('.search-empty')) !== null);
+  check('搜索无 console/page error', searchErrors.length === 0, searchErrors.slice(0, 2).join(' | '));
+
+  /* ---------------- M3：页头搜索入口 + `/` 快捷键 ---------------- */
+  const header = await browser.newPage();
+  await header.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  await header.goto(`${BASE}/#/mainline`, { waitUntil: 'networkidle0', timeout: 20000 });
+  await delays(600);
+  await header.keyboard.press('/');
+  await delays(200);
+  const shortcut = await header.evaluate(() => document.activeElement?.className ?? '');
+  check('按 / 聚焦页头搜索框', shortcut.includes('header-search-input'), shortcut);
+  await header.type('.header-search-input', 'transformer');
+  await header.keyboard.press('Enter');
+  await header.waitForSelector('.search-result', { timeout: 15000 });
+  await delays(500);
+  const headerSearch = await header.evaluate(() => ({
+    hash: location.hash,
+    input: document.querySelector('.search-input')?.value ?? '',
+  }));
+  check('页头搜索跳转并同步关键词', headerSearch.hash.includes('#/search?q=transformer') && headerSearch.input === 'transformer', JSON.stringify(headerSearch));
+
+  await feed.close();
+  await search.close();
+  await header.close();
+
 } finally {
   await browser.close();
 }
