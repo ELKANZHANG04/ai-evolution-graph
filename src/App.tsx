@@ -4,6 +4,7 @@ import { META } from './lib/data';
 import { formatBuiltAt } from './lib/format';
 import { MainlinePage } from './pages/MainlinePage';
 import { ExplorePage } from './pages/ExplorePage';
+import { ChapterPage } from './pages/ChapterPage';
 import { ThoughtBoardPage } from './pages/ThoughtBoardPage';
 import { AboutPage } from './pages/AboutPage';
 import { FeedPage } from './pages/PlaceholderPages';
@@ -54,6 +55,7 @@ export default function App() {
       <main className="app-main">
         {route.view === 'mainline' && <MainlinePage route={route} />}
         {route.view === 'explore' && <ExplorePage route={route} />}
+        {route.view === 'chapter' && <ChapterPage route={route} />}
         {route.view === 'thoughts' && <ThoughtBoardPage route={route} />}
         {route.view === 'feed' && <FeedPage />}
         {route.view === 'about' && <AboutPage />}

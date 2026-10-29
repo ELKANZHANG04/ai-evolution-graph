@@ -4,7 +4,7 @@ import { EntryDrawer } from '../components/detail/EntryDrawer';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import type { HashRoute } from '../hooks/useHashRoute';
 import { countByCategory, ENTRIES, getEntryById, GRAPH } from '../lib/data';
-import type { Category, GraphEdge, GraphNode } from '../lib/types';
+import type { Category, Entry, GraphEdge, GraphNode } from '../lib/types';
 import { RELATION_META, RELATION_ORDER } from '../theme/relations';
 
 // ECharts 图谱体积较大：按需懒加载，首屏（时间轴）不背这个包
@@ -24,15 +24,31 @@ function GraphFallback() {
   );
 }
 
-export function GraphPage({ route }: { route: HashRoute }) {
+export interface GraphPageProps {
+  route: HashRoute;
+  /** 限定数据范围（主题页/章节页用）；默认全库 */
+  entries?: Entry[];
+}
+
+export function GraphPage({ route, entries }: GraphPageProps) {
   const [hiddenCategories, setHiddenCategories] = useState<Category[]>([]);
   const isMobile = useMediaQuery('(max-width: 899px)');
 
-  const counts = useMemo(() => countByCategory(ENTRIES), []);
+  const counts = useMemo(() => countByCategory(entries ?? ENTRIES), [entries]);
+  const scopedIds = useMemo(
+    () => (entries ? new Set(entries.map((entry) => entry.id)) : null),
+    [entries],
+  );
   // 影响图谱只展示 2012 至今（奠基时代走时间轴折叠区，避免时间轴被 1950s 拉长）
   const graphNodes = useMemo<GraphNode[]>(
-    () => GRAPH.nodes.filter((node) => node.date >= '2012-01-01' && node.type !== 'insight'),
-    [],
+    () =>
+      GRAPH.nodes.filter(
+        (node) =>
+          node.date >= '2012-01-01' &&
+          node.type !== 'insight' &&
+          (!scopedIds || scopedIds.has(node.id)),
+      ),
+    [scopedIds],
   );
   const nodeIds = useMemo(() => new Set(graphNodes.map((node) => node.id)), [graphNodes]);
   const graphEdges = useMemo<GraphEdge[]>(

@@ -17,7 +17,9 @@ sources:
   - "https://openreview.net/forum?id=BZ5a1r-kVsf"
 relations: []
 thought_chain: worldmodel
-thought_role: thesis
+thought_role: advance
+thought_claim: "没有世界模型，就没有真正的通用智能"
+thought_summary: "智能体需要在内部建立可预测世界的模型来做规划；纯自回归的 token 预测缺少对世界的结构化理解，难以走向通用智能。"
 needs_review: false
 node_kind: person
 ---

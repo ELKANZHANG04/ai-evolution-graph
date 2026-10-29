@@ -1,4 +1,4 @@
-export type ViewId = 'mainline' | 'explore' | 'thoughts' | 'feed' | 'about';
+export type ViewId = 'mainline' | 'explore' | 'chapter' | 'thoughts' | 'feed' | 'about';
 
 export interface ViewMeta {
   id: ViewId;
@@ -9,13 +9,12 @@ export interface ViewMeta {
 
 export const VIEWS: ViewMeta[] = [
   { id: 'mainline', label: '主线', en: 'Mainline', hint: '5 个阶段 · 24 个里程碑 · 突破点' },
-  { id: 'explore', label: '全量数据', en: 'Explore', hint: '时间轴 / 影响图谱（107 条全量）' },
-  { id: 'thoughts', label: '思想看板', en: 'Ideas', hint: '思想如何递进与推翻' },
+  { id: 'thoughts', label: '思想看板', en: 'Ideas', hint: '7 个主题：思想如何递进与推翻' },
   { id: 'feed', label: '最新动态', en: 'Feed', hint: '今天发生了什么（M3）' },
   { id: 'about', label: '关于', en: 'About', hint: '数据与评分标准' },
 ];
 
-const VIEW_IDS = new Set<string>(VIEWS.map((view) => view.id));
+const VIEW_IDS = new Set<string>([...VIEWS.map((view) => view.id), 'chapter', 'explore']);
 
 export interface RouteState {
   view: ViewId;

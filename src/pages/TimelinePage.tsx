@@ -6,18 +6,32 @@ import { MobileTimeline } from '../components/timeline/MobileTimeline';
 import { TimelineCanvas } from '../components/timeline/TimelineCanvas';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import type { HashRoute } from '../hooks/useHashRoute';
-import { countByCategory, ENTRIES, getEntryById, META, yearSpan } from '../lib/data';
+import { countByCategory, ENTRIES, getEntryById, yearSpan } from '../lib/data';
 import { formatDate } from '../lib/format';
 import type { Category, Entry } from '../lib/types';
 
-export function TimelinePage({ route }: { route: HashRoute }) {
+export interface TimelinePageProps {
+  route: HashRoute;
+  /** 限定数据范围（主题页/章节页用）；默认全库 */
+  entries?: Entry[];
+  /** 紧凑模式：隐藏页头（主题页已有自己的标题） */
+  compact?: boolean;
+}
+
+export function TimelinePage({ route, entries = ENTRIES, compact = false }: TimelinePageProps) {
   const [hiddenCategories, setHiddenCategories] = useState<Category[]>([]);
   const isMobile = useMediaQuery('(max-width: 767px)');
-  const counts = useMemo(() => countByCategory(ENTRIES), []);
+
+  const counts = useMemo(() => countByCategory(entries), [entries]);
+  const latestDate = useMemo(
+    () => entries.reduce((max, entry) => (entry.date > max ? entry.date : max), ''),
+    [entries],
+  );
+  const needsReview = useMemo(() => entries.filter((entry) => entry.needs_review).length, [entries]);
 
   // 奠基时代（< 2012）折叠，不铺进时间轴主体（需求硬性要求）
-  const timelineEntries = useMemo(() => ENTRIES.filter((entry) => entry.date >= '2012-01-01'), []);
-  const foundationEntries = useMemo(() => ENTRIES.filter((entry) => entry.date < '2012-01-01'), []);
+  const timelineEntries = useMemo(() => entries.filter((entry) => entry.date >= '2012-01-01'), [entries]);
+  const foundationEntries = useMemo(() => entries.filter((entry) => entry.date < '2012-01-01'), [entries]);
   const span = yearSpan(timelineEntries);
   const selectedId = route.params.get('entry');
   const selected = getEntryById(selectedId);
@@ -41,36 +55,38 @@ export function TimelinePage({ route }: { route: HashRoute }) {
   };
 
   return (
-    <div className="timeline-page">
-      <section className="hero">
-        <div className="hero-copy">
-          <h1>
-            AI 演进图谱
-            <span className="hero-mark">2012 → {span ? span[1] : '—'}</span>
-          </h1>
-          <p className="hero-sub">
-            每个块是一个事件，<strong>面积 = 影响力</strong>。一眼看懂 AI 的节奏、重心与密度。
-          </p>
-        </div>
-        <dl className="hero-stats">
-          <div>
-            <dt>条目</dt>
-            <dd className="mono">{META.count}</dd>
+    <div className={`timeline-page${compact ? ' is-compact' : ''}`}>
+      {!compact && (
+        <section className="hero">
+          <div className="hero-copy">
+            <h1>
+              AI 演进图谱
+              <span className="hero-mark">2012 → {span ? span[1] : '—'}</span>
+            </h1>
+            <p className="hero-sub">
+              每个块是一个事件，<strong>面积 = 影响力</strong>。一眼看懂 AI 的节奏、重心与密度。
+            </p>
           </div>
-          <div>
-            <dt>覆盖年份</dt>
-            <dd className="mono">{span ? `${span[0]}–${span[1]}` : '—'}</dd>
-          </div>
-          <div>
-            <dt>最新事件</dt>
-            <dd className="mono">{META.latestDate ? formatDate(META.latestDate) : '—'}</dd>
-          </div>
-          <div>
-            <dt>待核对</dt>
-            <dd className={`mono${META.needsReview > 0 ? ' is-warn' : ''}`}>{META.needsReview}</dd>
-          </div>
-        </dl>
-      </section>
+          <dl className="hero-stats">
+            <div>
+              <dt>条目</dt>
+              <dd className="mono">{entries.length}</dd>
+            </div>
+            <div>
+              <dt>覆盖年份</dt>
+              <dd className="mono">{span ? `${span[0]}–${span[1]}` : '—'}</dd>
+            </div>
+            <div>
+              <dt>最新事件</dt>
+              <dd className="mono">{latestDate ? formatDate(latestDate) : '—'}</dd>
+            </div>
+            <div>
+              <dt>待核对</dt>
+              <dd className={`mono${needsReview > 0 ? ' is-warn' : ''}`}>{needsReview}</dd>
+            </div>
+          </dl>
+        </section>
+      )}
 
       <section className="legend-bar" aria-label="图例与筛选">
         <Legend counts={counts} hidden={hiddenCategories} onToggle={toggleCategory} />

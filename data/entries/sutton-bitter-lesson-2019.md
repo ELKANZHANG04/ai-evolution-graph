@@ -18,6 +18,8 @@ sources:
 relations: []
 thought_chain: scaling
 thought_role: thesis
+thought_claim: "通用方法 × 算力，终将胜过人类先验"
+thought_summary: "七十年 AI 史反复证明：能随算力扩展的通用方法最终最有效；依赖人类领域知识的精巧设计，会被规模与数据碾压。"
 needs_review: false
 node_kind: concept
 ---

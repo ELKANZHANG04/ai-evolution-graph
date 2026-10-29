@@ -18,6 +18,8 @@ sources:
 relations: []
 thought_chain: software
 thought_role: thesis
+thought_claim: "程序的未来，写在神经网络的权重里"
+thought_summary: "软件从显式规则转向由数据与优化过程决定权重；数据、清洗与评测，正在取代源代码成为新的工程对象。"
 needs_review: false
 node_kind: concept
 ---

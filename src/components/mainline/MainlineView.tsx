@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { CSSProperties, JSX } from 'react';
 import { CategoryChips, ImportanceBadge, TypeBadge } from '../common/Badges';
 import { EmptyState } from '../common/EmptyState';
@@ -12,6 +12,8 @@ export interface MainlineViewProps {
   selectedId: string | null;
   breakthroughOnly: boolean;
   onSelect: (entry: Entry) => void;
+  /** 打开本章全部事件（页面级路由/视图） */
+  onOpenChapter: (chapterId: string) => void;
 }
 
 /** 突破点：importance ≥ 9（10 分再加强一档） */
@@ -111,41 +113,90 @@ function MilestoneCard({ entry, selected, hint, onSelect }: MilestoneCardProps):
   );
 }
 
-interface BackgroundMarksProps {
+interface BackgroundBlockProps {
+  chapterId: string;
   entries: Entry[];
+  expanded: boolean;
+  onToggle: () => void;
   onSelect: (entry: Entry) => void;
 }
 
-function BackgroundMarks({ entries, onSelect }: BackgroundMarksProps): JSX.Element | null {
+/** 背景事件区：极简刻度 + 可展开的标题列表（默认收起，保持低调）。 */
+function BackgroundBlock({
+  chapterId,
+  entries,
+  expanded,
+  onToggle,
+  onSelect,
+}: BackgroundBlockProps): JSX.Element | null {
   if (entries.length === 0) return null;
   const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
   const { shown, hidden } = pickMarks(sorted);
+  const listId = `ml-bg-list-${chapterId}`;
 
   return (
-    <div className="ml-background">
-      <span className="ml-background-label">
-        另有 <span className="mono">{entries.length}</span> 条背景事件
-      </span>
-      <span className="ml-marks">
-        {shown.map((entry) => {
-          const style = {
-            height: `${backgroundMarkHeight(entry.importance)}px`,
-            '--ml-mark-color': categoryColor(primaryCategory(entry.categories)),
-          } as CSSProperties;
-          return (
-            <button
-              key={entry.id}
-              type="button"
-              className="ml-mark"
-              style={style}
-              title={`${formatMonth(entry.date)} · ${entry.title}`}
-              aria-label={`背景事件：${entry.title}（${formatMonth(entry.date)}）`}
-              onClick={() => onSelect(entry)}
-            />
-          );
-        })}
-        {hidden > 0 && <span className="ml-mark-more mono">+{hidden}</span>}
-      </span>
+    <div className={`ml-background${expanded ? ' is-expanded' : ''}`}>
+      <div className="ml-background-row">
+        <button
+          type="button"
+          className="ml-background-toggle"
+          aria-expanded={expanded}
+          aria-controls={listId}
+          onClick={onToggle}
+        >
+          另有 <span className="mono">{entries.length}</span> 条背景事件 · {expanded ? '收起标题' : '展开标题'}
+          <span className="ml-background-caret" aria-hidden="true">
+            {expanded ? '▴' : '▾'}
+          </span>
+        </button>
+        <span className="ml-marks">
+          {shown.map((entry) => {
+            const style = {
+              height: `${backgroundMarkHeight(entry.importance)}px`,
+              '--ml-mark-color': categoryColor(primaryCategory(entry.categories)),
+            } as CSSProperties;
+            return (
+              <button
+                key={entry.id}
+                type="button"
+                className="ml-mark"
+                style={style}
+                title={`${formatMonth(entry.date)} · ${entry.title}`}
+                aria-label={`背景事件：${entry.title}（${formatMonth(entry.date)}）`}
+                onClick={() => onSelect(entry)}
+              />
+            );
+          })}
+          {hidden > 0 && <span className="ml-mark-more mono">+{hidden}</span>}
+        </span>
+      </div>
+
+      {expanded && (
+        <ul className="ml-background-list" id={listId}>
+          {sorted.map((entry) => (
+            <li key={entry.id}>
+              <button
+                type="button"
+                className="ml-background-item"
+                title={`${formatMonth(entry.date)} · ${entry.title}`}
+                aria-label={`背景事件：${entry.title}（${formatMonth(entry.date)}）`}
+                onClick={() => onSelect(entry)}
+              >
+                <span
+                  className="ml-background-dot"
+                  style={{ background: categoryColor(primaryCategory(entry.categories)) }}
+                  aria-hidden="true"
+                />
+                <span className="ml-background-year mono">{entry.date.slice(0, 4)}</span>
+                <span className="ml-background-sep" aria-hidden="true">
+                  ·
+                </span>
+                <span className="ml-background-title">{entry.title}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -156,8 +207,11 @@ interface ChapterSectionProps {
   isLast: boolean;
   selectedId: string | null;
   breakthroughOnly: boolean;
+  backgroundExpanded: boolean;
   hints: Map<string, string>;
   onSelect: (entry: Entry) => void;
+  onToggleBackground: () => void;
+  onOpenChapter: (chapterId: string) => void;
 }
 
 function ChapterSection({
@@ -166,10 +220,14 @@ function ChapterSection({
   isLast,
   selectedId,
   breakthroughOnly,
+  backgroundExpanded,
   hints,
   onSelect,
+  onToggleBackground,
+  onOpenChapter,
 }: ChapterSectionProps): JSX.Element {
   const chapterNumber = String(index + 1).padStart(2, '0');
+  const totalEvents = chapter.entries.length + chapter.background.length;
   const cards = breakthroughOnly
     ? chapter.entries.filter((entry) => entry.importance >= BREAKTHROUGH_THRESHOLD)
     : chapter.entries;
@@ -197,9 +255,19 @@ function ChapterSection({
           </h2>
           <p className="ml-chapter-en">{chapter.en}</p>
         </div>
-        <span className="ml-chapter-years mono" aria-label={`${chapter.dateStart} 至 ${chapter.dateEnd}`}>
-          {formatYearRange(chapter.dateStart, chapter.dateEnd)}
-        </span>
+        <div className="ml-chapter-side">
+          <span className="ml-chapter-years mono" aria-label={`${chapter.dateStart} 至 ${chapter.dateEnd}`}>
+            {formatYearRange(chapter.dateStart, chapter.dateEnd)}
+          </span>
+          <button
+            type="button"
+            className="ml-chapter-open"
+            onClick={() => onOpenChapter(chapter.id)}
+            title={`查看“${chapter.title}”本章全部事件`}
+          >
+            查看本章全部 <span className="mono">{totalEvents}</span> 条事件 →
+          </button>
+        </div>
       </header>
       <p className="ml-chapter-desc">{chapter.description}</p>
 
@@ -219,7 +287,13 @@ function ChapterSection({
         emptyLine && <p className="ml-empty-line">{emptyLine}</p>
       )}
 
-      <BackgroundMarks entries={chapter.background} onSelect={onSelect} />
+      <BackgroundBlock
+        chapterId={chapter.id}
+        entries={chapter.background}
+        expanded={backgroundExpanded}
+        onToggle={onToggleBackground}
+        onSelect={onSelect}
+      />
 
       {!isLast && (
         <div className="ml-next" aria-hidden="true">
@@ -236,7 +310,24 @@ function ChapterSection({
  * 主线视图：5 章纵向叙事，24 个里程碑大卡片；突破点金色高亮，其余事件压缩为章节底部背景刻度。
  * 数据由 buildMainlineChapters 分组（src/lib/mainline.ts），本组件只负责呈现与交互。
  */
-export function MainlineView({ chapters, selectedId, breakthroughOnly, onSelect }: MainlineViewProps): JSX.Element {
+export function MainlineView({
+  chapters,
+  selectedId,
+  breakthroughOnly,
+  onSelect,
+  onOpenChapter,
+}: MainlineViewProps): JSX.Element {
+  const [expandedBackground, setExpandedBackground] = useState<Set<string>>(() => new Set<string>());
+
+  const toggleBackground = useCallback((chapterId: string) => {
+    setExpandedBackground((previous) => {
+      const next = new Set(previous);
+      if (next.has(chapterId)) next.delete(chapterId);
+      else next.add(chapterId);
+      return next;
+    });
+  }, []);
+
   const mainlineById = useMemo(() => {
     const map = new Map<string, Entry>();
     for (const chapter of chapters) {
@@ -276,8 +367,11 @@ export function MainlineView({ chapters, selectedId, breakthroughOnly, onSelect 
           isLast={index === chapters.length - 1}
           selectedId={selectedId}
           breakthroughOnly={breakthroughOnly}
+          backgroundExpanded={expandedBackground.has(chapter.id)}
           hints={hints}
           onSelect={onSelect}
+          onToggleBackground={() => toggleBackground(chapter.id)}
+          onOpenChapter={onOpenChapter}
         />
       ))}
     </div>

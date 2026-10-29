@@ -44,9 +44,6 @@ export function MainlinePage({ route }: { route: HashRoute }) {
             <span className="mainline-toggle-dot" aria-hidden="true" />
             仅看突破点（≥9 分）
           </button>
-          <a className="mainline-link" href="#/explore?mode=timeline">
-            全量时间轴 →
-          </a>
           <a className="mainline-link" href="#/thoughts">
             思想看板 →
           </a>
@@ -58,6 +55,7 @@ export function MainlinePage({ route }: { route: HashRoute }) {
         selectedId={selectedId}
         breakthroughOnly={breakthroughOnly}
         onSelect={selectEntry}
+        onOpenChapter={(chapterId) => route.navigate('chapter', { ch: chapterId })}
       />
 
       <EntryDrawer

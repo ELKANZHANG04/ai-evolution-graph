@@ -24,6 +24,15 @@ export interface ThoughtChainConfig {
 
 export const THOUGHT_CHAIN_CONFIGS: ThoughtChainConfig[] = [
   {
+    id: 'architecture',
+    title: '架构与范式',
+    question: '模型结构的下一次收敛，会发生在哪里？',
+    description:
+      '从卷积到注意力，架构一度收敛到 Transformer；专家混合、状态空间模型、长上下文与多模态融合仍在挑战它的统治——"什么结构才配得上通用智能"始终没有定论。',
+    steps: [],
+    context: ['alexnet-2012', 'resnet-2015', 'transformer-2017', 'vit-2020'],
+  },
+  {
     id: 'scaling',
     title: '规模与泛化',
     question: '算力、数据与参数，能一直放大下去吗？',
@@ -32,7 +41,7 @@ export const THOUGHT_CHAIN_CONFIGS: ThoughtChainConfig[] = [
     steps: [
       { entryId: 'sutton-bitter-lesson-2019', role: 'thesis' },
       { entryId: 'scaling-laws-2020', role: 'advance', arrow: '实证化：loss 可预测' },
-      { entryId: 'chinchilla-2022', role: 'revision', arrow: '修正：数据也要等比放大' },
+      { entryId: 'chinchilla-paper-2022', role: 'revision', arrow: '修正：数据也要等比放大' },
       { entryId: 'o1-2024', role: 'advance', arrow: '分叉：把算力花在推理上' },
     ],
     context: ['gpt-3-2020', 'gpt-4-2023', 'deepseek-r1-2025'],
@@ -56,11 +65,29 @@ export const THOUGHT_CHAIN_CONFIGS: ThoughtChainConfig[] = [
     description:
       'LeCun 主张必须建立可预测世界的内部模型；而自回归大模型路线用规模与数据给出了另一条反例——两条路线至今仍在拉扯。',
     steps: [
-      { entryId: 'lecun-world-model-2022', role: 'thesis' },
+      { entryId: 'lecun-world-model-2022', role: 'advance', arrow: '推进：世界模型的路线图' },
       { entryId: 'gpt-4-2023', role: 'rebuttal', arrow: '反例：自回归大模型路线胜出' },
       { entryId: 'sora-2024', role: 'advance', arrow: '落地：视频生成的世界模拟' },
     ],
     context: ['gpt-4o-2024', 'o1-2024'],
+  },
+  {
+    id: 'alignment',
+    title: '对齐与安全',
+    question: '如何让强大的模型可靠、可监督？',
+    description:
+      '从 RLHF 到宪法 AI、从可扩展监督到红队评测：对齐从"调参技巧"变成了决定模型能否上线、以及由谁承担风险的工程与治理问题。',
+    steps: [],
+    context: ['rlhf-instructgpt-2022', 'constitutional-ai-2022', 'eu-ai-act-2024'],
+  },
+  {
+    id: 'agents',
+    title: '智能体与交互',
+    question: '人机交互的下一个形态是什么？',
+    description:
+      '从对话框到能自主规划、调用工具、长时间运行的智能体；协议（MCP）、权限、信任与验收标准，正在成为产品竞争的新焦点。',
+    steps: [],
+    context: ['chatgpt-2022', 'mcp-2024', 'cursor-2023'],
   },
   {
     id: 'opensource',
@@ -126,12 +153,7 @@ export function buildThoughtChains(entries: readonly Entry[]): ThoughtChainData[
     }
 
     const extras = entries
-      .filter(
-        (entry) =>
-          entry.thought_chain === config.id &&
-          !configured.has(entry.id) &&
-          (entry.thought_role ?? 'advance') !== 'thesis',
-      )
+      .filter((entry) => entry.thought_chain === config.id && !configured.has(entry.id))
       .sort((a, b) => a.date.localeCompare(b.date));
 
     let extraCount = 0;
@@ -140,6 +162,9 @@ export function buildThoughtChains(entries: readonly Entry[]): ThoughtChainData[
       steps.push({ entry, role, arrow: ROLE_ARROW[role] });
       extraCount += 1;
     }
+
+    // 配置步骤与自动补充条目合并后按时间排序，保证"演进顺序"永远正确
+    steps.sort((a, b) => a.entry.date.localeCompare(b.entry.date));
 
     const context = config.context
       .map((id) => byId.get(id))

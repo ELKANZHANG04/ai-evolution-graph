@@ -22,6 +22,8 @@ relations:
     note: "在 Software 2.0 框架基础上提出 Software 3.0"
 thought_chain: software
 thought_role: advance
+thought_claim: "自然语言，就是新的编程语言"
+thought_summary: "LLM 更像一台可编程计算机：prompt 是程序、上下文是内存；抽象层再次上移，人类负责意图与验收。"
 needs_review: true
 node_kind: concept
 ---

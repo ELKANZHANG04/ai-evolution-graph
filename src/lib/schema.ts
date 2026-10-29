@@ -47,6 +47,8 @@ export const entryFrontmatterSchema = z.object({
   mainline: z.boolean().optional().default(false),
   thought_chain: z.string().min(1).optional(),
   thought_role: z.enum(THOUGHT_ROLES).optional(),
+  thought_claim: z.string().max(120).optional(),
+  thought_summary: z.string().max(600).optional(),
 });
 
 export type EntryFrontmatter = z.infer<typeof entryFrontmatterSchema>;

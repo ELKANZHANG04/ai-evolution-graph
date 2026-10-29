@@ -91,6 +91,8 @@ function parseEntryFile(absPath: string, file: string): LoadedEntry {
     mainline: fm.mainline ?? false,
     thought_chain: fm.thought_chain,
     thought_role: fm.thought_role,
+    thought_claim: fm.thought_claim,
+    thought_summary: fm.thought_summary,
     body: body || undefined,
   };
 

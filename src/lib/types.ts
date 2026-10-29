@@ -69,10 +69,14 @@ export interface Entry {
   added_at?: string;
   /** 是否进入「主线」视图（默认视图只展示精选项，其余作为背景） */
   mainline?: boolean;
-  /** 思想看板：所属思想链（见 src/lib/thoughtChains.ts） */
+  /** 思想看板：所属思想主题（见 src/lib/thoughtChains.ts） */
   thought_chain?: string;
   /** 思想看板：在本链中的角色 */
   thought_role?: ThoughtRole;
+  /** 思想看板：一句话主张（卡片主标题，突出思想本身） */
+  thought_claim?: string;
+  /** 思想看板：2–3 句思想概括（卡片正文） */
+  thought_summary?: string;
   /** Markdown 正文：思想的深度解读等，详情里展示 */
   body?: string;
 }

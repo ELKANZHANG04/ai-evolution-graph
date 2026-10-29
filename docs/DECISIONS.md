@@ -271,6 +271,8 @@ export interface MobileInfluenceListProps {
 
 M2.5 已交付：主线视图、思想看板、全量数据二级页、旧深链兼容；验收见 docs/M2.5-ACCEPTANCE.md。
 
+M2.6 已交付（2026-10-29）：思想看板升级为 7 个主题（16 条引文，主张优先、原文可展开）、主线章节入口 + 主题页（全部事件列表 + 本章时间轴/影响图谱）、全量数据并入主题页（导航 4 项）；验收见 docs/M2.6-ACCEPTANCE.md。
+
 ### 11.4 组件契约
 ```ts
 // src/components/mainline/MainlineView.tsx（viz-engineer）
