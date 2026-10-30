@@ -20,7 +20,8 @@
     "curate:apply": "tsx scripts/curate.ts --apply",
     "seo": "node scripts/build-sitemap.mjs",
     "seo:pages": "tsx scripts/build-seo-pages.ts",
-    "seo:push": "node scripts/baidu-push.mjs"
+    "seo:push": "node scripts/baidu-push.mjs",
+    "build:clean": "rm -rf src/generated dist && npm run build"
   },
   "dependencies": {
     "d3-hierarchy": "^3.1.2",

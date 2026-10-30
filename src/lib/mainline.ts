@@ -1,4 +1,3 @@
-import { ENTRIES } from './data';
 import type { Entry } from './types';
 
 /**
@@ -69,7 +68,7 @@ export function inChapter(entry: Entry, chapter: MainlineChapterMeta): boolean {
 
 /** 主线视图数据：按章节分组的精选项 + 背景事件 */
 export function buildMainlineChapters(
-  entries: readonly Entry[] = ENTRIES,
+  entries: readonly Entry[],
 ): MainlineChapterData[] {
   return MAINLINE_CHAPTERS.map((chapter) => {
     const inRange = entries.filter(
@@ -86,7 +85,7 @@ export function buildMainlineChapters(
 }
 
 /** 主线总节点数 / 全量条数，用于页面说明 */
-export function mainlineStats(entries: readonly Entry[] = ENTRIES): {
+export function mainlineStats(entries: readonly Entry[]): {
   mainlineCount: number;
   backgroundCount: number;
 } {
