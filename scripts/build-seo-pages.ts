@@ -290,7 +290,7 @@ ${cards}`;
   });
   const body = `
 <h1>思想看板</h1>
-<p>${thoughts.length} 个主题：每条链从命题出发，经过推进、修正或反驳；主题持续被讨论才有价值。</p>
+<p>${thoughts.length} 个主题：每条链从命题出发，经过推进、修正或反驳；主题持续被讨论才有价值。每个主题内按时间倒序（最新在前），向右回溯更早的讨论。</p>
 ${sections.join('\n')}
 <a class="cta" href="${link('/#/thoughts')}">打开交互版思想看板 →</a>
 `;
@@ -299,8 +299,9 @@ ${sections.join('\n')}
 
 function feedPage(): void {
   const cutoff = new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  const freshCutoff = new Date(Date.now() - 180 * 24 * 3600 * 1000).toISOString().slice(0, 10);
   const recent = entries
-    .filter((entry) => entry.added_at && entry.added_at >= cutoff)
+    .filter((entry) => entry.added_at && entry.added_at >= cutoff && entry.date >= freshCutoff)
     .sort((a, b) => (b.added_at ?? '').localeCompare(a.added_at ?? '') || b.date.localeCompare(a.date));
   const eventItems = recent.filter((entry) => entry.type !== 'insight');
   const insightItems = recent.filter((entry) => entry.type === 'insight');
@@ -314,7 +315,7 @@ function feedPage(): void {
           .join('\n');
   const body = `
 <h1>最新动态</h1>
-<p>只展示最近 5 天新入库的事件与思想（静态快照，每日 08:30 更新）。</p>
+<p>只展示最近 5 天新入库、且事件发生在近半年内的事件与思想（静态快照，每日 08:30 更新）。</p>
 <h2>新入库 · 事件 <span class="small">${eventItems.length}</span></h2>
 ${renderList(eventItems, '最近 5 天暂无新入库事件。')}
 <h2>新入库 · 思想 <span class="small">${insightItems.length}</span></h2>
@@ -322,7 +323,7 @@ ${renderList(insightItems, '最近 5 天暂无新入库思想。')}
 <p class="small">最近一次数据更新：${esc(meta.latestDate)}</p>
 <a class="cta" href="${link('/#/feed')}">打开交互版动态 →</a>
 `;
-  writePage('/p/feed/', layout({ title: `最新动态 · ${config.siteName}`, description: '最近 5 天新入库的 AI 事件与思想。', canonicalPath: '/p/feed/', body }));
+  writePage('/p/feed/', layout({ title: `最新动态 · ${config.siteName}`, description: '最近 5 天新入库、事件发生在近半年内的 AI 事件与思想。', canonicalPath: '/p/feed/', body }));
 }
 
 function aboutPage(): void {

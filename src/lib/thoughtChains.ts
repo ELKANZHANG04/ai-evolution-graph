@@ -199,10 +199,13 @@ export function buildThoughtChains(entries: readonly Entry[]): ThoughtChainData[
       extraCount += 1;
     }
 
-    // 很新的路线置顶；其余按时间排序
-    const pinned = (step: ThoughtStepData) => (step.entry.thought_pin === 'top' ? 0 : 1);
+    // 时间倒序：最新的一步在最左，向右逐步回溯到最早（用户 2026-10-30 要求）。
+    // thought_pin 只作为「新方向」标注，不参与排序，避免新旧交错。
     steps.sort(
-      (a, b) => pinned(a) - pinned(b) || a.entry.date.localeCompare(b.entry.date),
+      (a, b) =>
+        b.entry.date.localeCompare(a.entry.date) ||
+        b.entry.importance - a.entry.importance ||
+        a.entry.id.localeCompare(b.entry.id),
     );
 
     const context = config.context

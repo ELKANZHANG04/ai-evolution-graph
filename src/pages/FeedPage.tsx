@@ -14,6 +14,8 @@ export interface FeedPageProps {
 
 /** 最新动态只展示最近 5 天（含今天）新入库的条目 */
 const RECENT_DAYS = 5;
+/** 事件本身也必须「新」：只保留近半年内发生的事件/思想，避免把补录的旧内容当新闻 */
+const FRESH_EVENT_DAYS = 180;
 
 /** today 往前推 days 天的 YYYY-MM-DD（UTC 对齐，避免时区导致差一天） */
 function daysBeforeISO(today: string, days: number): string {
@@ -46,6 +48,8 @@ function FeedCard({ entry, onSelect }: FeedCardProps): JSX.Element {
       role="button"
       tabIndex={0}
       aria-label={`${entry.title}，${entry.date}，影响力 ${entry.importance}/10`}
+      data-date={entry.date}
+      data-added={entry.added_at}
       style={{ borderLeftColor: categoryColor(primaryCategory(entry.categories)) }}
       onClick={() => onSelect(entry)}
       onKeyDown={(event) => {
@@ -114,8 +118,14 @@ export function FeedPage({ route }: FeedPageProps): JSX.Element {
 
   const { recentEvents, recentInsights, recentCount, latestAddedAt } = useMemo(() => {
     const from = daysBeforeISO(today, RECENT_DAYS - 1);
+    const freshFrom = daysBeforeISO(today, FRESH_EVENT_DAYS - 1);
     const recent = sortNewEntries(
-      ENTRIES.filter((entry) => entry.added_at !== undefined && entry.added_at >= from),
+      ENTRIES.filter(
+        (entry) =>
+          entry.added_at !== undefined &&
+          entry.added_at >= from &&
+          entry.date >= freshFrom,
+      ),
     );
     const latest = ENTRIES.reduce((max, entry) => {
       const stamp = entry.added_at ?? '';
@@ -139,7 +149,9 @@ export function FeedPage({ route }: FeedPageProps): JSX.Element {
         <div className="feed-copy">
           <p className="feed-kicker mono">LATEST · 最新动态</p>
           <h1>最新动态</h1>
-          <p className="feed-sub">每天 08:30 抓取；只展示最近 5 天新入库的事件与思想。</p>
+          <p className="feed-sub">
+            每天 08:30 抓取；只展示最近 5 天新入库、且事件本身发生在近半年内的事件与思想——旧内容即使刚补录也不进「最新」。
+          </p>
         </div>
         <dl className="feed-meta">
           <div>
@@ -147,7 +159,7 @@ export function FeedPage({ route }: FeedPageProps): JSX.Element {
             <dd className="mono">{META.builtAt ? formatBuiltAt(META.builtAt) : '未知'}</dd>
           </div>
           <div>
-            <dt>最近 5 天入库</dt>
+            <dt>近 5 天入库（近半年）</dt>
             <dd className="mono">{recentCount}</dd>
           </div>
         </dl>
@@ -157,7 +169,7 @@ export function FeedPage({ route }: FeedPageProps): JSX.Element {
         id="feed-events-title"
         title="新入库 · 事件"
         entries={recentEvents}
-        emptyText="最近 5 天暂无新入库事件 · 每日 08:30 自动更新"
+        emptyText="最近 5 天暂无近半年的新入库事件 · 每日 08:30 自动更新"
         onSelect={openEntry}
       />
 
@@ -165,13 +177,13 @@ export function FeedPage({ route }: FeedPageProps): JSX.Element {
         id="feed-insights-title"
         title="新入库 · 思想"
         entries={recentInsights}
-        emptyText="最近 5 天暂无新入库思想 · 每日 08:30 自动更新"
+        emptyText="最近 5 天暂无近半年的新入库思想 · 每日 08:30 自动更新"
         onSelect={openEntry}
       />
 
       {recentCount === 0 && (
         <p className="feed-empty-note">
-          最近 5 天暂无新入库 · 每日 08:30 自动更新 · 最近一次入库：
+          最近 5 天暂无近半年的新入库 · 每日 08:30 自动更新 · 最近一次入库：
           {latestAddedAt ? formatDate(latestAddedAt) : '暂无记录'}
         </p>
       )}

@@ -175,6 +175,7 @@ function StepCard({ step, selected, now, onSelect }: StepCardProps): JSX.Element
       aria-label={`${kind} · ${title}（${year}）· 影响力 ${entry.importance}/10 · ${roleText}${showRadar ? ' · 创新雷达' : ''}`}
       aria-current={selected ? 'true' : undefined}
       data-entry-id={entry.id}
+      data-date={entry.date}
       data-role={role}
       data-importance={entry.importance}
       data-innovation={isInnovation ? 'true' : undefined}
@@ -362,9 +363,12 @@ function ThemeSection({
         {chain.steps.map((step, stepIndex) => (
           <Fragment key={step.entry.id}>
             {stepIndex > 0 && (
-              <div className={`tb-arrow tb-role-${step.role}`} aria-hidden="true">
-                <span className="tb-arrow-glyph">→</span>
-                <span className="tb-arrow-label">{step.arrow}</span>
+              <div
+                className={`tb-arrow tb-role-${chain.steps[stepIndex - 1].role} is-reverse`}
+                aria-hidden="true"
+              >
+                <span className="tb-arrow-glyph">←</span>
+                <span className="tb-arrow-label">{chain.steps[stepIndex - 1].arrow}</span>
               </div>
             )}
             <StepCard
@@ -376,6 +380,8 @@ function ThemeSection({
           </Fragment>
         ))}
       </div>
+
+      <p className="tb-track-order">↤ 时间倒序：最左为最新，向右逐步回溯</p>
 
       {scrollState.scrollable && (
         <div className="tb-track-nav">

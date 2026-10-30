@@ -408,6 +408,33 @@ try {
   );
   check('卡片标注影响力分数', board.importance === board.cards && board.importance > 0, `${board.importance}/${board.cards}`);
 
+  // 时间倒序：每个主题内「最新在左，向右回溯」，不再有置顶打乱
+  const orderState = await thoughts.evaluate(() => {
+    const themes = Array.from(document.querySelectorAll('.tb-theme')).map((theme) => {
+      const dates = Array.from(theme.querySelectorAll('.tb-card')).map(
+        (card) => card.getAttribute('data-date') ?? '',
+      );
+      return { dates, sorted: dates.every((date, index) => index === 0 || dates[index - 1] >= date) };
+    });
+    return {
+      allSorted: themes.every((theme) => theme.sorted),
+      firstLatest: themes.every((theme) => theme.dates.length < 2 || theme.dates[0] >= theme.dates.at(-1)),
+      orderHints: document.querySelectorAll('.tb-track-order').length,
+      reverseArrows: document.querySelectorAll('.tb-arrow.is-reverse').length,
+      leftArrows: Array.from(document.querySelectorAll('.tb-arrow-glyph')).filter((node) => node.textContent?.trim() === '←').length,
+    };
+  });
+  check(
+    '每个主题按时间倒序（最新在左、向右回溯）',
+    orderState.allSorted && orderState.firstLatest,
+    JSON.stringify({ sorted: orderState.allSorted, firstLatest: orderState.firstLatest }),
+  );
+  check(
+    '倒序提示与回溯箭头（←）',
+    orderState.orderHints >= 11 && orderState.reverseArrows > 0 && orderState.leftArrows === orderState.reverseArrows,
+    JSON.stringify({ hints: orderState.orderHints, reverse: orderState.reverseArrows, left: orderState.leftArrows }),
+  );
+
   // 创新雷达：融入主题（代表徽标收敛 + 主题头「新方向」聚合），不再有全局筛选
   check(
     '创新雷达融入主题（代表徽标 ≤8 + 新方向聚合）',
@@ -563,6 +590,18 @@ try {
   check('最新动态已删除时间窗 tab', feedInfo.tabs === 0, `${feedInfo.tabs} 个`);
   check('最新动态只展示最近 5 天入库（有卡片）', feedInfo.cards >= 1, `${feedInfo.cards} 张`);
   check('最新动态卡片标注影响力分数', feedInfo.importance === feedInfo.cards && feedInfo.importance > 0, `${feedInfo.importance}/${feedInfo.cards}`);
+  const feedFreshness = await feed.evaluate(() => {
+    const cutoff = new Date(Date.now() - 180 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+    const dates = Array.from(document.querySelectorAll('.feed-card')).map(
+      (card) => card.getAttribute('data-date') ?? '',
+    );
+    return { cutoff, dates, allFresh: dates.every((date) => date >= cutoff), minDate: dates.slice().sort()[0] ?? '' };
+  });
+  check(
+    '最新动态只保留近半年事件（补录旧内容不混入）',
+    feedFreshness.allFresh,
+    JSON.stringify({ cutoff: feedFreshness.cutoff, oldest: feedFreshness.minDate }),
+  );
   check(
     '最新动态内联创新雷达徽标',
     feedInfo.innovationBadges >= 1 && feedInfo.innovationBadges <= feedInfo.cards,
