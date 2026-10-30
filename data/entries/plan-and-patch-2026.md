@@ -19,9 +19,6 @@ relations: []
 added_at: 2026-10-29
 needs_review: false
 node_kind: paper
-innovation: true
-maturity: paper
-why_underrated: "计划修复被当成 agent 容错的小技巧，但它可能是长程任务里最影响成功率的环节。"
 thought_chain: generative-decision
 thought_role: revision
 thought_claim: "改一段计划，不必重写全文"

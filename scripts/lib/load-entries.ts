@@ -2,7 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
 import { entryFrontmatterSchema } from '../../src/lib/schema';
+import { buildThoughtChains, THOUGHT_CHAIN_CONFIGS } from '../../src/lib/thoughtChains';
 import type { Category, Entry, NodeKind, Relation, RelationType } from '../../src/lib/types';
+
+/** 合法思想主题 id（与 src/lib/thoughtChains.ts 单一来源） */
+const THEME_IDS = new Set(THOUGHT_CHAIN_CONFIGS.map((config) => config.id));
 
 export const ROOT = process.cwd();
 export const ENTRIES_DIR = path.join(ROOT, 'data', 'entries');
@@ -152,6 +156,26 @@ export function crossCheck(loaded: LoadedEntry[]): CrossCheckResult {
     if (entry.importance === 10 && entry.type === 'insight') {
       warnings.push(`${file}：insight 拿到 10 分，请确认是否符合锚点（10 分应为范式级事件）`);
     }
+
+    // 思想主题与创新雷达（docs/DECISIONS.md §13）
+    if (entry.thought_chain && !THEME_IDS.has(entry.thought_chain)) {
+      errors.push(
+        `${file}：thought_chain "${entry.thought_chain}" 不是合法主题 id（可选：${[...THEME_IDS].join(' / ')}）`,
+      );
+    }
+    if (entry.innovation) {
+      if (!entry.thought_chain) {
+        errors.push(`${file}：创新雷达必须挂在某个思想主题上（thought_chain），雷达不是独立主题`);
+      }
+      if (!entry.maturity) errors.push(`${file}：创新雷达必须写 maturity（paper/prototype/product）`);
+      if (!entry.why_underrated?.trim()) {
+        errors.push(`${file}：创新雷达必须写 why_underrated（为什么值得关注/被低估）`);
+      }
+    }
+    if (entry.thought_chain && entry.type === 'insight') {
+      if (!entry.thought_claim?.trim()) warnings.push(`${file}：进入思想主题的 insight 建议写 thought_claim（一句话主张）`);
+      if (!entry.thought_summary?.trim()) warnings.push(`${file}：进入思想主题的 insight 建议写 thought_summary（2–3 句概括）`);
+    }
   }
 
   // 关系类型枚举外的值由 zod 拦住；重复边给出提示
@@ -171,6 +195,23 @@ export function crossCheck(loaded: LoadedEntry[]): CrossCheckResult {
   if (top > 5) warnings.push(`10 分条目 ${top} 条，超过建议上限 5 条（锚点：仅 AlexNet/Transformer/ChatGPT 级）`);
   if (scores.length > 0 && high / scores.length > 0.3) {
     warnings.push(`8-9 分条目占比 ${(100 * (high / scores.length)).toFixed(0)}%，超过 30% 警示线（评分通胀）`);
+  }
+
+  // 思想主题结构：雷达必须由既有路径托底，不允许主题只剩雷达条目（docs/DECISIONS.md §13）
+  const chains = buildThoughtChains(entries.map(({ entry }) => entry));
+  for (const chain of chains) {
+    if (chain.steps.length === 0) continue;
+    const nonRadar = chain.steps.filter((step) => step.entry.innovation !== true).length;
+    if (nonRadar < 2) {
+      warnings.push(
+        `主题「${chain.title}」只有 ${nonRadar} 条常规步骤：创新雷达是「旧路径上的新方向」，需要既有步骤托底`,
+      );
+    }
+  }
+
+  const innovationTotal = entries.filter(({ entry }) => entry.innovation).length;
+  if (innovationTotal > 8) {
+    warnings.push(`创新雷达 ${innovationTotal} 条，超过上限 8 条：同一方向只标代表条目，自成一派则不再标雷达`);
   }
 
   return { errors, warnings };

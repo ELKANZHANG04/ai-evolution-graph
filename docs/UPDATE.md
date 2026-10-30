@@ -35,7 +35,11 @@
    npm run curate:apply    # 候选晋升 + 满额末位淘汰（写 docs/reviews/curation-<date>.md）
    npm run build
    ```
-   另：每日更新需额外做一次「创新信号扫描」（1–3 条 `innovation: true` 的 insight，字段见 DECISIONS §12.3）。
+   另：每日更新需做一次「创新信号扫描」（0–2 条新想法入库，按 DECISIONS §13.2 的收窄定义，详见 docs/PROPOSAL-M4.md）：
+   - 只找「旧路径上的新方向/新方法」，**不新增主题**，挂到已有主题的既有步骤之间；
+   - `innovation: true` 只给同一方向的**代表条目**（全库上限 8 条），必须同时写 `maturity` + `why_underrated`；
+   - 方向已自成一派 / 已是常规路线 → 不加 innovation，作为普通步骤入库；
+   - 很新的路线可加 `thought_pin: 'top'` 置顶。
 6. **自动归位**：时间轴按 `date` 排序、按年分列、列内按 `importance` 降序 treemap 排布——不需要任何手工坐标。
 7. **汇报**：当天新增 N 条、其中待核对 M 条、覆盖类别、来源数。用户在界面顶部看到「更新于」与 NEW 标记。
 
@@ -71,6 +75,9 @@
 
 ## 6. 质量红线（更新时必须遵守）
 
+- 思想主题要**持续被讨论**：每个主题最新步骤 ≥ 2025，且 2024 年后 ≥ 2 条（validate 会打印主题新鲜度表）；
+- 创新雷达是「旧路径上的新方向」：必须有 `thought_chain`/`maturity`/`why_underrated`，且所属主题至少有 2 条非雷达步骤托底；全库 ≤ 8 条；
+- 最新动态只展示最近 5 天 `added_at` 的入库条目（事件/思想两块），补历史不写 `added_at`；
 - 不确定的事实、数字、日期 → `needs_review: true`；
 - 来源链接不确定 → 留空，**禁止编造 URL**；
 - 近 6 个月事件不确定 → 宁缺毋滥；

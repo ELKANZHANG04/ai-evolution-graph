@@ -19,9 +19,6 @@ relations: []
 added_at: 2026-10-29
 needs_review: false
 node_kind: paper
-innovation: true
-maturity: paper
-why_underrated: "常听+主动插话的数据与评测刚出现，尚未进入主流语音助手的产品路线图，但它是「持续在场」交互的前提。"
 thought_chain: interaction
 thought_role: advance
 thought_claim: "语音模型要学会主动插话，而不只是回答"

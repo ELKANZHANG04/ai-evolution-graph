@@ -20,9 +20,6 @@ relations: []
 added_at: 2026-10-29
 needs_review: false
 node_kind: paper
-innovation: true
-maturity: prototype
-why_underrated: "语音 agent 的工具调用通常被拆成外挂级联，把动作同步进 160ms 时间轴才是「边听边说边做」的真正难点。"
 thought_chain: interaction
 thought_role: advance
 thought_claim: "边听、边说、边调工具，共享 160ms 时间轴"

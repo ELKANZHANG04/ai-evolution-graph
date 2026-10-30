@@ -1,5 +1,6 @@
 import { CATEGORY_META, CATEGORY_ORDER } from '../src/theme/categories';
 import { ENTRY_TYPES, type Category, type EntryType } from '../src/lib/types';
+import { buildThoughtChains } from '../src/lib/thoughtChains';
 import { crossCheck, loadEntries } from './lib/load-entries';
 
 const args = process.argv.slice(2);
@@ -72,6 +73,27 @@ if (showStats && entries.length > 0) {
   const post2012 = entries.filter((entry) => entry.date >= '2012-01-01').length;
   const foundation = entries.filter((entry) => entry.date < '2012-01-01').length;
   console.log(`2012 至今条目：${post2012}（种子目标 80–120，动态更新后可持续增长） | 奠基条目：${foundation}（目标 8–10，简述）`);
+
+  // 思想主题新鲜度（docs/DECISIONS.md §13：主题必须持续被讨论）
+  const chains = buildThoughtChains(entries);
+  const now = new Date();
+  const cutoff18m = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 18, now.getUTCDate()))
+    .toISOString()
+    .slice(0, 10);
+  const innovationTotal = entries.filter((entry) => entry.innovation).length;
+  console.log(`\n${line}\n思想主题新鲜度（近 18 个月 = ${cutoff18m} 之后）\n${line}`);
+  console.log('主题                          步骤  雷达  最新      近18月  状态');
+  for (const chain of chains) {
+    const dates = chain.steps.map((step) => step.entry.date).sort((a, b) => a.localeCompare(b));
+    const latest = dates.at(-1) ?? '—';
+    const recent = dates.filter((date) => date >= cutoff18m).length;
+    const radar = chain.steps.filter((step) => step.entry.innovation === true).length;
+    const status = chain.steps.length === 0 ? '空' : latest >= '2025-01-01' ? '持续讨论' : '待更新';
+    console.log(
+      `${chain.title.padEnd(24, ' ')}  ${String(chain.steps.length).padStart(3)}  ${String(radar).padStart(3)}  ${latest}  ${String(recent).padStart(5)}   ${status}`,
+    );
+  }
+  console.log(`创新雷达总数：${innovationTotal}（上限 8，且必须挂在主题的既有路径上）`);
 }
 
 console.log(`\n${line}`);

@@ -12,19 +12,19 @@
 |---|---|
 | 仓库 | https://github.com/ELKANZHANG04/ai-evolution-graph（public） |
 | 站点 | https://elkanzhang04.github.io/ai-evolution-graph/ |
-| SEO 索引页 | 同上 `/p/`（141 页） |
-| sitemap | 同上 `/sitemap.xml`（142 URL） |
+| SEO 索引页 | 同上 `/p/`（187 页） |
+| sitemap | 同上 `/sitemap.xml`（188 URL） |
 | 发布链 | push `main` → Actions：install → validate:strict → test → build → Pages（约 1–2 分钟） |
-| 当前版本 | commit `3592d5c`，本地与 origin 已同步，无待推送 |
+| 当前版本 | M4 改版（思想持续讨论 + 创新雷达收窄 + 最新动态极简），本地待推送 |
 
 ## 功能现状（全部已验收）
 
 - 主线（默认页）：27/32 里程碑，5 章，突破点高亮；章节页=全事件列表+时间轴+影响图谱
-- 思想看板：11 主题、27 观点卡、创新雷达徽标、新路线置顶
-- 最新动态：最近新增/7·30 天/全部 + 候选晋升池 + 创新雷达 + 主线容量条
+- 思想看板 v4：11 主题全部「持续活跃」（每主题 7–11 步、最新 ≥2025、架构到 2026-09）；40 观点卡；年份活动条 + 活跃度筛选；创新雷达收窄为 8 条代表条目并融入主题「新方向」聚合，不再有全局雷达筛选
+- 最新动态 v3：只展示最近 5 天新入库（`added_at`），分「事件 / 思想」两块；内联影响力分数与「创新」徽标；删除时间窗/候选池/独立雷达栏目
 - 搜索：加权、高亮、类别/年份/影响力筛选、URL 状态、`/` 快捷键
 - 每日更新：会话内 08:30 定时（新闻+创新信号 → 校验/构建 → `curate:apply` 主线晋升淘汰）
-- 数据：136 条（109 条 2012+ / 10 条奠基 / 其余旧经典），27 insight，22 needs_review，来源覆盖 ~97%
+- 数据：182 条（171 条 2012+ / 11 条奠基），40 insight，24 needs_review，来源覆盖 98%；11 个思想主题共 90 步
 - 数据治理：`MAINLINE_CAP=32`，重要性≥8 可晋升，满则淘汰最低分（10 分保护）
 
 ## 未决（不阻塞，等用户拍板）
@@ -40,9 +40,9 @@
 npm run dev         # 本地开发
 npm run build       # 完整构建（含 SEO 静态页 + sitemap）
 npm run validate    # 数据校验
-npm run test        # 单测（36 个）
+npm run test        # 单测（42 个）
 npm run curate      # 主线治理 dry-run
-npm run qa:ui       # 无头 Chrome 验收（68 项）
+npm run qa:ui       # 无头 Chrome 验收（73 项）
 ```
 
 ## 环境提醒
@@ -54,4 +54,4 @@ npm run qa:ui       # 无头 Chrome 验收（68 项）
 
 ## 文档地图
 
-`docs/DECISIONS.md`（为什么这样做）· `docs/UPDATE.md`（加条目）· `docs/DEPLOY.md`（发布/部署）· `docs/SEO.md` · `docs/DOMESTIC-LAUNCH.md`（国内上线）· `docs/BEGINNER-GUIDE.md` · `docs/M1–M3.5-ACCEPTANCE.md`（各里程碑验收）
+`docs/DECISIONS.md`（为什么这样做，§13 是本轮新定义）· `docs/PROPOSAL-M4.md`（本轮方案）· `docs/M4-ACCEPTANCE.md`（本轮验收）· `docs/UPDATE.md`（加条目）· `docs/DEPLOY.md`（发布/部署）· `docs/SEO.md` · `docs/DOMESTIC-LAUNCH.md`（国内上线）· `docs/BEGINNER-GUIDE.md` · `docs/M1–M3.5-ACCEPTANCE.md`（各里程碑验收）

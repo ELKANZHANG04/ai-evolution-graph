@@ -13,6 +13,8 @@ speaker: ""
 occasion: ""
 my_comment: "同一套方法论随后在语音、翻译、检测上被反复复制；AI 产业的算力叙事，从这里正式开场。注：ILSVRC-2012 结果于 2012 年 10 月公布，本条目日期取通行的 2012-09-30，精确到日存疑。"
 tags: [alexnet, cnn, imagenet, gpu, deep-learning]
+thought_chain: architecture
+thought_role: thesis
 sources:
   - "https://papers.nips.cc/paper_files/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html"
 relations:

@@ -23,9 +23,6 @@ relations:
 added_at: 2026-10-29
 needs_review: false
 node_kind: paper
-innovation: true
-maturity: paper
-why_underrated: "把思考挪到离线预计算，改变的是「算力何时花」而非「花多少」，这个视角在推理竞赛中被忽视。"
 thought_chain: memory
 thought_role: advance
 thought_claim: "把思考放到离线：睡眠时计算换测试时算力"

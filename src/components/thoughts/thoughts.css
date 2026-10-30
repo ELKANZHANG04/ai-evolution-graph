@@ -1,6 +1,7 @@
 /* ==========================================================================
-   思想看板 v2（ThoughtBoard）
-   - 主题筛选条（sticky）+ 7 个纵向主题分区
+   思想看板 v4（ThoughtBoard）
+   - sticky 主题筛选条（全部 / 持续活跃 / 待补充 / 各主题）+ 11 个纵向主题分区
+   - 主题头：持续活跃徽标 + 年份活动条 + 新方向聚合
    - 主题内横向思想链（卡片 280–320px，可横向滚动）；≤900px 纵向堆叠
    - 类名前缀 tb-；颜色只用 global.css tokens + 角色色（--tb-role-*）
    ========================================================================== */
@@ -125,62 +126,26 @@
   color: var(--accent);
 }
 
-/* 创新雷达 chip（粉点 + 粉计数） */
-.tb-radar-dot {
+/* 活跃度筛选 chip 的状态圆点（持续活跃 / 待补充） */
+.tb-status-dot {
   flex: 0 0 auto;
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #f472b6;
-  box-shadow: 0 0 6px rgba(244, 114, 182, 0.55);
 }
 
-.tb-filter-chip.is-radar .tb-filter-count {
-  color: #f472b6;
-  background: rgba(244, 114, 182, 0.12);
+.tb-status-dot.is-active {
+  background: var(--ok);
+  box-shadow: 0 0 6px rgba(61, 214, 140, 0.5);
 }
 
-.tb-filter-chip.is-radar.is-active {
-  border-color: #f472b6;
-  color: #f472b6;
-  background: rgba(244, 114, 182, 0.08);
+.tb-status-dot.is-stale {
+  background: var(--warn);
 }
 
-.tb-filter-chip.is-radar.is-active .tb-filter-count {
-  color: #f472b6;
-}
-
-/* 创新雷达模式说明 */
-.tb-radar-hint {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
+/* 筛选结果为空时的提示 */
+.tb-filter-empty {
   margin-top: -14px;
-  padding: 9px 12px;
-  border: 1px solid rgba(244, 114, 182, 0.28);
-  border-radius: var(--radius);
-  background: rgba(244, 114, 182, 0.07);
-  color: var(--text-2);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.tb-radar-hint strong {
-  color: #f472b6;
-  font-weight: 600;
-}
-
-.tb-radar-hint-dot {
-  flex: 0 0 auto;
-  width: 7px;
-  height: 7px;
-  margin-top: 6px;
-  border-radius: 50%;
-  background: #f472b6;
-  box-shadow: 0 0 8px rgba(244, 114, 182, 0.6);
-}
-
-.tb-radar-empty {
   padding: 22px 18px;
   border: 1px dashed var(--border-strong);
   border-radius: var(--radius-lg);
@@ -271,6 +236,135 @@
 
 .tb-theme-meta .mono {
   color: var(--text-2);
+}
+
+/* 主题头右侧：meta + 活跃度徽标 + 年份活动条 */
+.tb-theme-side {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  padding-bottom: 2px;
+}
+
+.tb-theme-activity {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tb-theme-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.7;
+  white-space: nowrap;
+}
+
+.tb-theme-status::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.tb-theme-status.is-active {
+  color: var(--ok);
+  border-color: rgba(61, 214, 140, 0.4);
+  background: rgba(61, 214, 140, 0.1);
+}
+
+.tb-theme-status.is-stale {
+  color: var(--warn);
+  border-color: rgba(245, 165, 36, 0.4);
+  background: rgba(245, 165, 36, 0.1);
+}
+
+.tb-years-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.tb-years {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+}
+
+.tb-year-tick {
+  width: 4px;
+  height: 5px;
+  border-radius: 1px;
+  background: var(--border);
+  transition:
+    background-color 140ms ease,
+    height 140ms ease;
+}
+
+.tb-year-tick.is-recent:not(.is-on) {
+  background: var(--border-strong);
+}
+
+.tb-year-tick.is-on {
+  height: 10px;
+  background: var(--text-3);
+}
+
+.tb-year-tick.is-on.is-recent {
+  height: 14px;
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(110, 168, 254, 0.45);
+}
+
+.tb-years-range {
+  font-size: 9.5px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--text-3);
+}
+
+/* 主题头「新方向」聚合（来自 thought_pin: top，不再逐条铺雷达徽标） */
+.tb-theme-new {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+.tb-theme-new-label {
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.tb-theme-new-item {
+  max-width: 100%;
+  padding: 1px 8px;
+  border: 1px solid rgba(110, 168, 254, 0.32);
+  border-radius: 999px;
+  background: rgba(110, 168, 254, 0.08);
+  color: var(--text-2);
+  font-size: 11.5px;
+  line-height: 1.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ---------- 横向思想链（桌面） ---------- */
@@ -446,9 +540,38 @@
   background: currentColor;
 }
 
+/* 卡片顶部右侧：影响力分数 + 类型 */
+.tb-card-facts {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.tb-importance {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.tb-importance .badge-importance {
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.tb-importance-den {
+  font-size: 9.5px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--text-3);
+}
+
 .tb-kind {
   flex: 0 0 auto;
-  margin-left: auto;
   font-size: 10.5px;
   line-height: 1.5;
   letter-spacing: 0.06em;
@@ -800,12 +923,26 @@
   }
 
   .tb-theme-head {
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tb-theme-side {
     align-items: flex-start;
+    width: 100%;
+    padding-bottom: 0;
   }
 
   .tb-theme-meta {
-    padding-bottom: 0;
+    white-space: normal;
+  }
+
+  .tb-theme-activity {
+    justify-content: flex-start;
+  }
+
+  .tb-years-wrap {
+    align-items: flex-start;
   }
 
   .tb-track-nav {

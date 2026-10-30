@@ -231,7 +231,7 @@ function homePage(): void {
 <ul>
   <li><a href="${link('/p/mainline/')}">演进主线</a>：${chapters.length} 个阶段、${meta.count} 条中的精选举措</li>
   <li><a href="${link('/p/thoughts/')}">思想看板</a>：${thoughts.length} 个主题的观点演进</li>
-  <li><a href="${link('/p/feed/')}">最新动态</a>：按事件日期倒序</li>
+  <li><a href="${link('/p/feed/')}">最新动态</a>：最近 5 天新入库的事件与思想</li>
   <li><a href="${link('/p/about/')}">关于与评分标准</a></li>
 </ul>
 <h2>最近条目</h2>
@@ -264,41 +264,65 @@ ${chapter.entries
 }
 
 function thoughtsPage(): void {
-  const body = `
-<h1>思想看板</h1>
-<p>${thoughts.length} 个主题：每条链从命题出发，经过推进、修正或反驳。</p>
-${thoughts
-  .map(
-    (chain) => `<h2>${esc(chain.title)}</h2>
+  const cutoff18 = new Date(Date.now() - 548 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  const cutoff30 = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  const sections = thoughts.map((chain) => {
+    const steps = chain.steps.map((step) => byId.get(step.id)).filter((entry): entry is Entry => entry !== undefined);
+    const latest = steps.map((entry) => entry.date).sort((a, b) => a.localeCompare(b)).at(-1) ?? '—';
+    const recent = steps.filter((entry) => entry.date >= cutoff18).length;
+    const radar = steps.filter((entry) => entry.innovation).length;
+    const directions = steps
+      .filter((entry) => entry.thought_pin === 'top')
+      .map((entry) => (entry.thought_claim ?? entry.title).slice(0, 24));
+    const cards = chain.steps
+      .map((step) => {
+        const entry = byId.get(step.id);
+        if (!entry) return '';
+        const radarLabel = entry.innovation && ((entry.added_at ?? '') >= cutoff30 || entry.thought_pin === 'top') ? ' · 创新雷达' : '';
+        return `<div class="card"><p class="small">${esc(ROLE_LABEL[step.role] ?? step.role)} · ${esc(entry.date)} · 影响力 ${entry.importance}/10${radarLabel}</p><a class="title" href="${entryHref(entry)}">${esc(entry.thought_claim ?? entry.title)}</a><p>${esc(entry.thought_summary ?? entry.summary)}</p>${entry.quote ? `<blockquote>“${esc(entry.quote)}”</blockquote><p class="small">${esc(entry.speaker ?? '')} · ${esc(entry.occasion ?? '')}</p>` : ''}</div>`;
+      })
+      .join('\n');
+    return `<h2>${esc(chain.title)}</h2>
 <p class="muted">${esc(chain.question)}</p>
 <p class="small">${esc(chain.description)}</p>
-${chain.steps
-  .map((step) => {
-    const entry = byId.get(step.id);
-    if (!entry) return '';
-    return `<div class="card"><p class="small">${esc(ROLE_LABEL[step.role] ?? step.role)} · ${esc(entry.date)}${entry.innovation ? ' · 创新雷达' : ''}</p><a class="title" href="${entryHref(entry)}">${esc(entry.thought_claim ?? entry.title)}</a><p>${esc(entry.thought_summary ?? entry.summary)}</p>${entry.quote ? `<blockquote>“${esc(entry.quote)}”</blockquote><p class="small">${esc(entry.speaker ?? '')} · ${esc(entry.occasion ?? '')}</p>` : ''}</div>`;
-  })
-  .join('\n')}`,
-  )
-  .join('\n')}
+<p class="small">${steps.length} 步 · 最新 ${esc(latest.slice(0, 7))} · 近 18 个月 ${recent} 条${radar > 0 ? ` · 雷达 ${radar} 条` : ''}${directions.length > 0 ? ` · 新方向：${esc(directions.join(' / '))}` : ''}</p>
+${cards}`;
+  });
+  const body = `
+<h1>思想看板</h1>
+<p>${thoughts.length} 个主题：每条链从命题出发，经过推进、修正或反驳；主题持续被讨论才有价值。</p>
+${sections.join('\n')}
 <a class="cta" href="${link('/#/thoughts')}">打开交互版思想看板 →</a>
 `;
   writePage('/p/thoughts/', layout({ title: `思想看板 · ${config.siteName}`, description: 'AI 思想与观点的递进、修正与反驳。', canonicalPath: '/p/thoughts/', body }));
 }
 
 function feedPage(): void {
-  const recent = [...entries].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 40);
+  const cutoff = new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  const recent = entries
+    .filter((entry) => entry.added_at && entry.added_at >= cutoff)
+    .sort((a, b) => (b.added_at ?? '').localeCompare(a.added_at ?? '') || b.date.localeCompare(a.date));
+  const eventItems = recent.filter((entry) => entry.type !== 'insight');
+  const insightItems = recent.filter((entry) => entry.type === 'insight');
+  const renderList = (list: Entry[], empty: string): string =>
+    list.length === 0
+      ? `<p class="muted">${esc(empty)}</p>`
+      : list
+          .map(
+            (entry) => `<div class="card"><p class="small">${esc(entry.date)} · 入库 ${esc(entry.added_at ?? '')} · ${esc(TYPE_LABEL[entry.type] ?? entry.type)} · 影响力 ${entry.importance}/10${entry.innovation ? ' · 创新雷达' : ''}</p><a class="title" href="${entryHref(entry)}">${esc(entry.title)}</a><p>${esc(entry.summary)}</p></div>`,
+          )
+          .join('\n');
   const body = `
 <h1>最新动态</h1>
-<p>按事件日期倒序（静态快照，交互版会随每日更新）。</p>
-${recent
-  .map(
-    (entry) => `<div class="card"><p class="small">${esc(entry.date)} · ${esc(TYPE_LABEL[entry.type] ?? entry.type)} · 影响力 ${entry.importance}/10</p><a class="title" href="${entryHref(entry)}">${esc(entry.title)}</a><p>${esc(entry.summary)}</p></div>`,
-  )
-  .join('\n')}
+<p>只展示最近 5 天新入库的事件与思想（静态快照，每日 08:30 更新）。</p>
+<h2>新入库 · 事件 <span class="small">${eventItems.length}</span></h2>
+${renderList(eventItems, '最近 5 天暂无新入库事件。')}
+<h2>新入库 · 思想 <span class="small">${insightItems.length}</span></h2>
+${renderList(insightItems, '最近 5 天暂无新入库思想。')}
+<p class="small">最近一次数据更新：${esc(meta.latestDate)}</p>
 <a class="cta" href="${link('/#/feed')}">打开交互版动态 →</a>
 `;
-  writePage('/p/feed/', layout({ title: `最新动态 · ${config.siteName}`, description: 'AI 演进图谱最新动态（静态快照）。', canonicalPath: '/p/feed/', body }));
+  writePage('/p/feed/', layout({ title: `最新动态 · ${config.siteName}`, description: '最近 5 天新入库的 AI 事件与思想。', canonicalPath: '/p/feed/', body }));
 }
 
 function aboutPage(): void {

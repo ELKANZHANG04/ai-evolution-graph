@@ -4,6 +4,8 @@ type: event
 title: "OpenAI DevDay 2026：发布常驻智能体 Dots"
 title_en: "OpenAI DevDay 2026: Dots Agents"
 date: "2026-09-29"
+thought_chain: agents
+thought_role: advance
 importance: 7
 categories: [agent, product]
 summary: "在 2026 年 9 月 29 日的 OpenAI DevDay 上，Sam Altman 发布名为 Dots 的「常驻」AI 智能体，可主动替用户持续推进长期任务，并与 Meta 的个人智能体 Muse 正面竞争；同日 OpenAI 还发布了 GPT-6.1 Sol 与 Ultrafast 速度档。"

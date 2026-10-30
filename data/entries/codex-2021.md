@@ -22,4 +22,6 @@ relations:
 mainline: true
 needs_review: false
 node_kind: model
+thought_chain: software
+thought_role: advance
 ---

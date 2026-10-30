@@ -24,4 +24,6 @@ relations:
     type: "启发"
     note: "Cursor 沿 Codex/Copilot 开启的 AI 编程方向演进"
 needs_review: false
+thought_chain: software
+thought_role: advance
 ---

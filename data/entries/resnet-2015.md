@@ -13,6 +13,8 @@ speaker: ""
 occasion: ""
 my_comment: "一个恒等映射的加法，换来的是整个领域对深度可扩展性的信心。"
 tags: [resnet, residual-connections, cnn, imagenet]
+thought_chain: architecture
+thought_role: advance
 sources:
   - "https://arxiv.org/abs/1512.03385"
 relations:

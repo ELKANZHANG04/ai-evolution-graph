@@ -20,14 +20,10 @@ relations: []
 added_at: 2026-10-29
 needs_review: false
 node_kind: paper
-innovation: true
-maturity: prototype
-why_underrated: "用几个特殊 token 而非新架构解决全双工，方法轻、可迁移，却因为不够「炫技」而被低估。"
 thought_chain: interaction
 thought_role: advance
 thought_claim: "不改架构，几个特殊 token 就能让 LLM 学会抢答"
 thought_summary: "在标准词表里加入少量特殊 token，让单个自回归 LLM 自主决定听、说、停；仅 40 万条全双工样本微调即达到 92% 轮转与 100% 打断成功率，且可迁移到不同 LLM。"
-thought_pin: top
 ---
 
 ## 背景

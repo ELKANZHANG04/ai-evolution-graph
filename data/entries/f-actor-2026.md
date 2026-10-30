@@ -19,9 +19,6 @@ relations: []
 added_at: 2026-10-29
 needs_review: false
 node_kind: paper
-innovation: true
-maturity: prototype
-why_underrated: "把抢话、附和等行为变成可控指令，是产品体验差异化的关键，但学术关注度远低于模型能力本身。"
 thought_chain: interaction
 thought_role: advance
 thought_claim: "抢话、附和、开场，这些对话行为可以被显式控制"
