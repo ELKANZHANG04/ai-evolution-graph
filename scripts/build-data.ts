@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { nodeKindOf } from '../src/theme/categories';
+import { MAINLINE_CHAPTERS } from '../src/lib/mainline';
+import { buildThoughtChains } from '../src/lib/thoughtChains';
 import type { Category, Entry, GraphData, Meta } from '../src/lib/types';
 import { RELATION_META } from '../src/theme/relations';
 import { crossCheck, ENTRIES_DIR, loadEntries, ROOT } from './lib/load-entries';
@@ -100,6 +102,30 @@ function main(): void {
   writeJson('entries.json', entries);
   writeJson('meta.json', meta);
   writeJson('graph.json', graph);
+
+  // 供静态 SEO 页面生成（scripts/build-seo-pages.mjs）使用
+  const chapters = MAINLINE_CHAPTERS.map((chapter) => ({
+    ...chapter,
+    entries: entries
+      .filter(
+        (entry) =>
+          entry.mainline &&
+          entry.date >= chapter.dateStart &&
+          entry.date <= chapter.dateEnd,
+      )
+      .map((entry) => entry.id),
+  }));
+  writeJson('chapters.json', chapters);
+
+  const thoughts = buildThoughtChains(entries).map((chain) => ({
+    id: chain.id,
+    title: chain.title,
+    question: chain.question,
+    description: chain.description,
+    steps: chain.steps.map((step) => ({ id: step.entry.id, role: step.role, arrow: step.arrow })),
+    context: chain.context.map((entry) => entry.id),
+  }));
+  writeJson('thoughts.json', thoughts);
 
   const first = entries[0];
   const last = entries.at(-1);

@@ -42,9 +42,30 @@ function main() {
   if (siteUrl) robotsLines.push(`Sitemap: ${siteUrl}/sitemap.xml`, '');
   fs.writeFileSync(path.join(DIST, 'robots.txt'), robotsLines.join('\n'), 'utf8');
 
-  // sitemap.xml：当前为单页应用（hash 路由），先收录入口页；
-  // 后续升级为路径路由 + 静态化后，这里再展开「主线/思想看板/每条条目」的 URL。
-  const urls = [{ loc: siteUrl ? `${siteUrl}/` : '/', priority: '1.0' }];
+  // sitemap.xml：入口页 + /p/** 静态内容页（主线/思想/动态/关于/每条条目）
+  const pDir = path.join(DIST, 'p');
+  const pRoutes = [];
+  function walk(dir) {
+    if (!fs.existsSync(dir)) return;
+    for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
+      const abs = path.join(dir, item.name);
+      if (item.isDirectory()) walk(abs);
+      else if (item.name === 'index.html') {
+        const route = path.relative(DIST, abs).replace(/index\.html$/, '').replaceAll(path.sep, '/');
+        pRoutes.push(route);
+      }
+    }
+  }
+  walk(pDir);
+  const urls = [
+    { loc: siteUrl ? `${siteUrl}/` : '/', priority: '1.0' },
+    ...pRoutes
+      .sort()
+      .map((route) => ({
+        loc: siteUrl ? `${siteUrl}/${route.replace(/^\/+/, '')}` : `/${route.replace(/^\/+/, '')}`,
+        priority: route.startsWith('p/entry/') ? '0.8' : '0.9',
+      })),
+  ];
   if (siteUrl) {
     const lines = [
       '<?xml version="1.0" encoding="UTF-8"?>',
@@ -56,7 +77,7 @@ function main() {
       '',
     ];
     fs.writeFileSync(path.join(DIST, 'sitemap.xml'), lines.join('\n'), 'utf8');
-    console.log(`[seo] 已生成 sitemap.xml（${urls.length} 个 URL）与 robots.txt`);
+    console.log(`[seo] 已生成 sitemap.xml（${urls.length} 个 URL，含 ${pRoutes.length} 个静态内容页）与 robots.txt`);
   } else {
     console.log('[seo] 已生成 robots.txt；site.config.json 的 siteUrl 为空 → 未生成 sitemap.xml');
     console.log('[seo] 部署拿到公网地址后，把它填进 site.config.json 再 npm run build');

@@ -6,7 +6,7 @@
   "description": "AI 演进图谱 —— 用块面积感知 AI 发展节奏的知识面板",
   "scripts": {
     "dev": "tsx scripts/build-data.ts && vite",
-    "build": "tsx scripts/build-data.ts && tsc --noEmit && vite build && node scripts/build-sitemap.mjs",
+    "build": "tsx scripts/build-data.ts && tsc --noEmit && vite build && tsx scripts/build-seo-pages.ts && node scripts/build-sitemap.mjs",
     "preview": "vite preview",
     "data:build": "tsx scripts/build-data.ts",
     "validate": "tsx scripts/validate.ts",
@@ -18,7 +18,9 @@
     "qa:ui": "node scripts/qa/check-ui.mjs",
     "curate": "tsx scripts/curate.ts",
     "curate:apply": "tsx scripts/curate.ts --apply",
-    "seo": "node scripts/build-sitemap.mjs"
+    "seo": "node scripts/build-sitemap.mjs",
+    "seo:pages": "tsx scripts/build-seo-pages.ts",
+    "seo:push": "node scripts/baidu-push.mjs"
   },
   "dependencies": {
     "d3-hierarchy": "^3.1.2",

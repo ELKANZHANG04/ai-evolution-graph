@@ -98,7 +98,8 @@ needs_review: false
 - **最快上线（无需服务器/Git）**：`npm run build` 后把 `dist/` 拖到 <https://app.netlify.com/drop>，立即得到公网地址。
 - **长期推荐**：GitHub Pages（账号 `ELKANZHANG04`；`.github/workflows/deploy.yml` 已配好构建+校验+发布），或 Vercel（`vercel.json` 已配置）。
 - **自定义域名 / 搜索引擎提交 / 每日更新的无人值守方案**：见 [docs/DEPLOY.md](docs/DEPLOY.md)。
-- **被搜索引擎搜到**：目前是 hash 路由单页应用，收录能力有限；升级路线见 [docs/SEO.md](docs/SEO.md)。
+- **面向国内上线（免备案方案、备案、百度收录、内容分发）**：见 [docs/DOMESTIC-LAUNCH.md](docs/DOMESTIC-LAUNCH.md)。
+- **被搜索引擎搜到**：已构建 **141 个静态内容页**（`/p/mainline/`、`/p/thoughts/`、`/p/entry/<id>/` 等，含正文/来源/关联，不依赖 JS）+ 142 个 URL 的 sitemap；百度主动推送脚本 `npm run seo:push`。更彻底的路径路由/预渲染升级见 [docs/SEO.md](docs/SEO.md)。
 - **新手调试/工具说明**：见 [docs/BEGINNER-GUIDE.md](docs/BEGINNER-GUIDE.md)（Chrome DevTools、本地开发、常见问题）。
 
 上线后把公网地址填进 `site.config.json` 的 `siteUrl`，重新构建会自动生成 `robots.txt`、`sitemap.xml` 与 canonical/OG 信息。
