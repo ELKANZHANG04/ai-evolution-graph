@@ -24,7 +24,7 @@
 - 最新动态 v4：单一「最近入库」流（不再拆事件/思想），窗口=近 5 天入库 + 事件近 180 天；按时间倒序；每条标类型与影响力分数；创新雷达仅中性小标签
 - 搜索：加权、高亮、类别/年份/影响力筛选、URL 状态、`/` 快捷键
 - 每日更新：会话内 08:30 定时（新闻+创新信号 → 校验/构建 → `curate:apply` 主线晋升淘汰）
-- 数据：182 条（171 条 2012+ / 11 条奠基），40 insight，24 needs_review，来源覆盖 98%；11 个思想主题共 90 步
+- 数据：191 条（180 条 2012+ / 11 条奠基），41 insight，24 needs_review，来源覆盖 98%；11 个思想主题共 90 步；本轮新增 9 条国内覆盖（Kimi K3.1 Pro、讯飞星火 X2.6、国产算力份额/订单、XHEART 芯片、DeepInfer、高德 λ0、星辰 TaaS、LingDT、大模型融资）
 - 数据治理：`MAINLINE_CAP=32`，重要性≥8 可晋升，满则淘汰最低分（10 分保护）
 
 ## 未决（不阻塞，等用户拍板）
@@ -54,4 +54,4 @@ npm run qa:ui       # 无头 Chrome 验收（75 项，含导图视图）
 
 ## 文档地图
 
-`docs/DECISIONS.md`（为什么这样做，§13 是本轮新定义）· `docs/PROPOSAL-M4.md`（本轮方案）· `docs/M4-ACCEPTANCE.md`（本轮验收）· `docs/UPDATE.md`（加条目）· `docs/DEPLOY.md`（发布/部署）· `docs/SEO.md` · `docs/DOMESTIC-LAUNCH.md`（国内上线）· `docs/BEGINNER-GUIDE.md` · `docs/M1–M3.5-ACCEPTANCE.md`（各里程碑验收）
+`docs/DECISIONS.md`（为什么这样做，§13–§16 是本轮定义）· `docs/SOURCES.md`（信息源清单：国内媒体/厂商/算力/市场）· `docs/PROPOSAL-M4.md`（本轮方案）· `docs/M4-ACCEPTANCE.md`（本轮验收）· `docs/UPDATE.md`（加条目）· `docs/DEPLOY.md`（发布/部署）· `docs/SEO.md` · `docs/DOMESTIC-LAUNCH.md`（国内上线）· `docs/BEGINNER-GUIDE.md` · `docs/M1–M3.5-ACCEPTANCE.md`（各里程碑验收）
