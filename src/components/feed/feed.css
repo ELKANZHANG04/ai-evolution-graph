@@ -286,3 +286,21 @@
     transform: none;
   }
 }
+
+/* ---------- v4：统一流 + 主线式标注 ---------- */
+
+.feed-card-top .feed-card-score {
+  margin-left: auto;
+}
+
+/* 创新雷达改为中性小标签，不与贡献度抢视觉焦点 */
+.feed-innovation-badge {
+  border-color: var(--border-strong);
+  background: var(--bg-elev-2);
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.feed-card .feed-card-foot .chips {
+  flex-wrap: wrap;
+}

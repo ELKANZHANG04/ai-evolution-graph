@@ -1,12 +1,13 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { JSX, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { ImportanceBadge } from '../common/Badges';
+import { CategoryChips, TypeBadge } from '../common/Badges';
 import { EmptyState } from '../common/EmptyState';
-import type { Entry, EntryType, Maturity } from '../../lib/types';
+import type { Entry } from '../../lib/types';
 import type { ThoughtChainData, ThoughtStepData } from '../../lib/thoughtChains';
-import { roleLabel } from '../../lib/thoughtChains';
 import { themeFreshness } from '../../lib/thoughtFreshness';
 import type { ThemeFreshness, ThemeYearBucket } from '../../lib/thoughtFreshness';
+import { categoryColor, primaryCategory } from '../../theme/categories';
 import './thoughts.css';
 
 export interface ThoughtBoardProps {
@@ -17,27 +18,11 @@ export interface ThoughtBoardProps {
 
 /** 链底部「相关实践」最多展示的 chips 数 */
 const MAX_CONTEXT = 3;
-const DAY_MS = 24 * 60 * 60 * 1000;
-/** NEW 徽标时间窗（近 7 天入库） */
-const NEW_WINDOW_MS = 7 * DAY_MS;
-/** 卡片雷达徽标时间窗：新入库 30 天内的代表条目才逐条标注 */
-const RADAR_WINDOW_MS = 30 * DAY_MS;
-/** 筛选状态（主题 id 不会取这三个值） */
+/** 筛选状态（主题 id 不会取这个值） */
 const FILTER_ALL = 'all';
-const FILTER_ACTIVE = 'active';
-const FILTER_STALE = 'stale';
-
-const KIND_LABEL: Record<EntryType, string> = {
-  insight: '观点',
-  event: '事件',
-  product: '产品',
-};
-
-const MATURITY_LABEL: Record<Maturity, string> = {
-  paper: '论文',
-  prototype: '原型',
-  product: '产品',
-};
+/** 突破点：importance ≥ 9（与主线一致） */
+const BREAKTHROUGH_THRESHOLD = 9;
+const LANDMARK_SCORE = 10;
 
 /** 2022-03-29 → 2022 */
 function yearOf(date: string): string {
@@ -46,15 +31,6 @@ function yearOf(date: string): string {
 
 function padNo(index: number): string {
   return String(index + 1).padStart(2, '0');
-}
-
-/** date（YYYY-MM-DD）距今是否在 windowMs 内；没有日期或未来日期返回 false */
-function isWithinWindow(date: string | undefined, windowMs: number, now: number): boolean {
-  if (!date) return false;
-  const stamp = Date.parse(`${date}T00:00:00`);
-  if (Number.isNaN(stamp)) return false;
-  const diff = now - stamp;
-  return diff >= 0 && diff <= windowMs;
 }
 
 interface YearStripProps {
@@ -100,26 +76,21 @@ function YearStrip({ buckets }: YearStripProps): JSX.Element {
 interface StepCardProps {
   step: ThoughtStepData;
   selected: boolean;
-  now: number;
   onSelect: (entry: Entry) => void;
 }
 
-function StepCard({ step, selected, now, onSelect }: StepCardProps): JSX.Element {
-  const { entry, role } = step;
+/**
+ * 思想卡：与主线里程碑卡同一套标注——年份、类型、影响力分数、类别、一句话主张 + 概括。
+ * 不再使用「命题/推进/修正/反驳」角色标签，也不再用置顶/雷达/成熟度徽标抢注意力；
+ * 视觉强调只由重要性决定（≥9 突破、=10 里程碑）。
+ */
+function StepCard({ step, selected, onSelect }: StepCardProps): JSX.Element {
+  const { entry } = step;
   const isInsight = entry.type === 'insight';
-  const roleText = roleLabel(role);
   const year = yearOf(entry.date);
-  const kind = KIND_LABEL[entry.type] ?? '事件';
+  const breakthrough = entry.importance >= BREAKTHROUGH_THRESHOLD;
+  const landmark = entry.importance >= LANDMARK_SCORE;
 
-  // 创新雷达：不逐条铺标签——只有「代表条目（置顶）」或「近 30 天新入库」才显示雷达徽标
-  const isInnovation = entry.innovation === true;
-  const maturity = entry.maturity;
-  const isPinned = entry.thought_pin === 'top';
-  const isNew = isWithinWindow(entry.added_at, NEW_WINDOW_MS, now);
-  const showRadar = isInnovation && (isPinned || isWithinWindow(entry.added_at, RADAR_WINDOW_MS, now));
-  const underrated = showRadar ? (entry.why_underrated?.trim() ?? '') : '';
-
-  // 思想优先：主张当标题、概括当正文；事件卡退回标题 + summary
   const claim = entry.thought_claim?.trim() ?? '';
   const title = claim || entry.title;
   const thought = isInsight
@@ -159,9 +130,8 @@ function StepCard({ step, selected, now, onSelect }: StepCardProps): JSX.Element
 
   const className = [
     'tb-card',
-    isInsight ? 'tb-card-insight' : 'tb-card-event',
-    isInnovation ? 'is-innovation' : '',
-    `tb-role-${role}`,
+    breakthrough ? 'is-breakthrough' : '',
+    landmark ? 'is-landmark' : '',
     selected ? 'is-selected' : '',
   ]
     .filter(Boolean)
@@ -172,56 +142,26 @@ function StepCard({ step, selected, now, onSelect }: StepCardProps): JSX.Element
       className={className}
       role="button"
       tabIndex={0}
-      aria-label={`${kind} · ${title}（${year}）· 影响力 ${entry.importance}/10 · ${roleText}${showRadar ? ' · 创新雷达' : ''}`}
+      aria-label={`${isInsight ? '观点' : entry.type === 'product' ? '产品' : '事件'} · ${title}（${year}）· 影响力 ${entry.importance}/10`}
       aria-current={selected ? 'true' : undefined}
       data-entry-id={entry.id}
       data-date={entry.date}
-      data-role={role}
       data-importance={entry.importance}
-      data-innovation={isInnovation ? 'true' : undefined}
-      data-radar={showRadar ? 'true' : undefined}
-      data-pinned={isPinned ? 'true' : undefined}
-      data-new={isNew ? 'true' : undefined}
+      data-type={entry.type}
+      style={{ borderLeftColor: categoryColor(primaryCategory(entry.categories)) }}
       onClick={() => onSelect(entry)}
       onKeyDown={handleKeyDown}
     >
-      {isPinned && <span className="tb-pin">新方向</span>}
-
       <div className="tb-card-top">
         <span className="tb-year mono">{year}</span>
-        <span className="tb-role-badge">{roleText}</span>
-        <span className="tb-card-facts">
-          <span className="tb-importance" title={`影响力 ${entry.importance}/10`}>
-            <ImportanceBadge value={entry.importance} />
-            <span className="tb-importance-den mono" aria-hidden="true">
-              /10
-            </span>
-          </span>
-          <span className="tb-kind">{kind}</span>
-        </span>
+        <TypeBadge type={entry.type} />
+        <ImportanceBadge value={entry.importance} />
       </div>
-
-      {(showRadar || isNew) && (
-        <div className="tb-card-tags">
-          {showRadar && <span className="tb-radar-badge">创新雷达</span>}
-          {showRadar && maturity && (
-            <span className={`tb-maturity tb-maturity-${maturity}`}>{MATURITY_LABEL[maturity]}</span>
-          )}
-          {isNew && <span className="badge badge-new tb-new">NEW</span>}
-        </div>
-      )}
 
       <p className={`tb-claim${claim ? '' : ' is-title'}`} title={entry.title}>
         {title}
       </p>
       <p className="tb-card-summary">{thought}</p>
-
-      {underrated && (
-        <p className="tb-underrated">
-          <span className="tb-underrated-label">为什么被低估：</span>
-          {underrated}
-        </p>
-      )}
 
       {isInsight && byline && (
         <p className="tb-byline" title={byline}>
@@ -252,6 +192,7 @@ function StepCard({ step, selected, now, onSelect }: StepCardProps): JSX.Element
       )}
 
       <footer className="tb-card-foot">
+        <CategoryChips categories={entry.categories} max={2} />
         <span className="tb-card-link">看详情 →</span>
       </footer>
     </article>
@@ -262,7 +203,6 @@ interface ThemeSectionProps {
   chain: ThoughtChainData;
   index: number;
   freshness: ThemeFreshness;
-  now: number;
   selectedId: string | null;
   onSelect: (entry: Entry) => void;
 }
@@ -271,7 +211,6 @@ function ThemeSection({
   chain,
   index,
   freshness,
-  now,
   selectedId,
   onSelect,
 }: ThemeSectionProps): JSX.Element {
@@ -314,10 +253,9 @@ function ThemeSection({
 
   return (
     <section
-      className={`tb-theme is-${freshness.status}`}
+      className="tb-theme"
       aria-labelledby={titleId}
       data-theme-id={chain.id}
-      data-status={freshness.status}
       data-latest={freshness.latestMonth ?? ''}
     >
       <header className="tb-theme-head">
@@ -346,42 +284,25 @@ function ThemeSection({
           <p className="tb-theme-meta">
             <span className="mono">{chain.steps.length}</span> 步 ·{' '}
             <span className="mono">{insightCount}</span> 观点 · 最新{' '}
-            <span className="mono">{freshness.latestMonth ?? '—'}</span> · 近 18 个月{' '}
-            <span className="mono">{freshness.recentCount}</span> 条
+            <span className="mono">{freshness.latestMonth ?? '—'}</span>
           </p>
-          <div className="tb-theme-activity">
-            <span className={`tb-theme-status is-${freshness.status}`}>
-              {freshness.status === 'active' ? '持续活跃' : '待补充'}
-            </span>
-            <YearStrip buckets={freshness.yearBuckets} />
-          </div>
+          <YearStrip buckets={freshness.yearBuckets} />
         </div>
       </header>
 
       <div className="tb-track" ref={trackRef}>
         {chain.steps.length === 0 && <p className="tb-theme-empty">暂无条目，待补充</p>}
-        {chain.steps.map((step, stepIndex) => (
-          <Fragment key={step.entry.id}>
-            {stepIndex > 0 && (
-              <div
-                className={`tb-arrow tb-role-${chain.steps[stepIndex - 1].role} is-reverse`}
-                aria-hidden="true"
-              >
-                <span className="tb-arrow-glyph">←</span>
-                <span className="tb-arrow-label">{chain.steps[stepIndex - 1].arrow}</span>
-              </div>
-            )}
-            <StepCard
-              step={step}
-              selected={selectedId === step.entry.id}
-              now={now}
-              onSelect={onSelect}
-            />
-          </Fragment>
+        {chain.steps.map((step) => (
+          <StepCard
+            key={step.entry.id}
+            step={step}
+            selected={selectedId === step.entry.id}
+            onSelect={onSelect}
+          />
         ))}
       </div>
 
-      <p className="tb-track-order">↤ 时间倒序：最左为最新，向右逐步回溯</p>
+      <p className="tb-track-order">时间倒序：最左为最新，向右逐步回溯</p>
 
       {scrollState.scrollable && (
         <div className="tb-track-nav">
@@ -390,9 +311,7 @@ function ThemeSection({
             className="tb-track-next"
             onClick={() => scrollBy(scrollState.atEnd ? -1 : 1)}
           >
-            {scrollState.atEnd
-              ? '← 回到开头'
-              : `横向滚动查看全部 ${chain.steps.length} 步 →`}
+            {scrollState.atEnd ? '← 回到开头' : `向右回溯更早的 ${chain.steps.length} 步 →`}
           </button>
         </div>
       )}
@@ -420,27 +339,20 @@ function ThemeSection({
   );
 }
 
-/** 思想看板 v4：主题持续被讨论 + 年份活动条 + 创新雷达融入主题 */
+/** 思想看板 v5：11 个主题纵向分区 + 时间倒序；标注方式与主线一致（重要性决定视觉强调） */
 export function ThoughtBoard({ chains, selectedId, onSelect }: ThoughtBoardProps): JSX.Element {
   const [activeFilter, setActiveFilter] = useState<string>(FILTER_ALL);
-  const now = useMemo(() => Date.now(), []);
-  const today = useMemo(() => new Date(now), [now]);
+  const now = useMemo(() => new Date(), []);
 
   const freshnessById = useMemo(() => {
     const map = new Map<string, ThemeFreshness>();
-    for (const chain of chains) map.set(chain.id, themeFreshness(chain, today));
+    for (const chain of chains) map.set(chain.id, themeFreshness(chain, now));
     return map;
-  }, [chains, today]);
+  }, [chains, now]);
 
   const totalSteps = chains.reduce((sum, chain) => sum + chain.steps.length, 0);
-  const activeCount = chains.filter(
-    (chain) => freshnessById.get(chain.id)?.status === 'active',
-  ).length;
-  const staleCount = chains.length - activeCount;
-
-  const isStatusFilter = activeFilter === FILTER_ACTIVE || activeFilter === FILTER_STALE;
   const isThemeFilter = chains.some((chain) => chain.id === activeFilter);
-  const allMode = activeFilter === FILTER_ALL || (!isStatusFilter && !isThemeFilter);
+  const allMode = !isThemeFilter;
 
   const themeViews = chains
     .map((chain, index) => ({ chain, index, freshness: freshnessById.get(chain.id) }))
@@ -448,12 +360,7 @@ export function ThoughtBoard({ chains, selectedId, onSelect }: ThoughtBoardProps
       (view): view is { chain: ThoughtChainData; index: number; freshness: ThemeFreshness } =>
         view.freshness !== undefined,
     )
-    .filter(({ chain, freshness }) => {
-      if (allMode) return true;
-      if (activeFilter === FILTER_ACTIVE) return freshness.status === 'active';
-      if (activeFilter === FILTER_STALE) return freshness.status === 'stale';
-      return chain.id === activeFilter;
-    });
+    .filter(({ chain }) => (allMode ? true : chain.id === activeFilter));
 
   if (chains.length === 0 || totalSteps === 0) {
     return (
@@ -462,13 +369,6 @@ export function ThoughtBoard({ chains, selectedId, onSelect }: ThoughtBoardProps
       </div>
     );
   }
-
-  const emptyHint =
-    activeFilter === FILTER_STALE
-      ? '所有主题都在持续活跃讨论中。'
-      : activeFilter === FILTER_ACTIVE
-        ? '暂无持续活跃主题，等待数据补充。'
-        : '暂无符合筛选的主题。';
 
   return (
     <div className="tb-board">
@@ -482,32 +382,6 @@ export function ThoughtBoard({ chains, selectedId, onSelect }: ThoughtBoardProps
         >
           <span className="tb-filter-name">全部主题</span>
           <span className="tb-filter-count mono">{chains.length}</span>
-        </button>
-
-        <button
-          type="button"
-          className={`tb-filter-chip${activeFilter === FILTER_ACTIVE ? ' is-active' : ''}`}
-          aria-pressed={activeFilter === FILTER_ACTIVE}
-          title="近 18 个月有新讨论的主题"
-          data-filter="active"
-          onClick={() => setActiveFilter(FILTER_ACTIVE)}
-        >
-          <span className="tb-status-dot is-active" aria-hidden="true" />
-          <span className="tb-filter-name">持续活跃</span>
-          <span className="tb-filter-count mono">{activeCount}</span>
-        </button>
-
-        <button
-          type="button"
-          className={`tb-filter-chip${activeFilter === FILTER_STALE ? ' is-active' : ''}`}
-          aria-pressed={activeFilter === FILTER_STALE}
-          title="近 18 个月没有新讨论、需要补充的主题"
-          data-filter="stale"
-          onClick={() => setActiveFilter(FILTER_STALE)}
-        >
-          <span className="tb-status-dot is-stale" aria-hidden="true" />
-          <span className="tb-filter-name">待补充</span>
-          <span className="tb-filter-count mono">{staleCount}</span>
         </button>
 
         {chains.map((chain, index) => {
@@ -530,19 +404,12 @@ export function ThoughtBoard({ chains, selectedId, onSelect }: ThoughtBoardProps
         })}
       </div>
 
-      {themeViews.length === 0 && (
-        <p className="tb-filter-empty" role="status">
-          {emptyHint}
-        </p>
-      )}
-
       {themeViews.map(({ chain, index, freshness }) => (
         <ThemeSection
           key={chain.id}
           chain={chain}
           index={index}
           freshness={freshness}
-          now={now}
           selectedId={selectedId}
           onSelect={onSelect}
         />

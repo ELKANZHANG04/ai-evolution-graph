@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { JSX } from 'react';
-import { CategoryChips, ImportanceBadge, NewBadge, ReviewBadge, TypeBadge } from '../components/common/Badges';
+import { CategoryChips, ImportanceBadge, TypeBadge } from '../components/common/Badges';
 import type { HashRoute } from '../hooks/useHashRoute';
 import { ENTRIES, META } from '../lib/data';
 import { formatBuiltAt, formatDate, todayISO } from '../lib/format';
@@ -25,12 +25,12 @@ function daysBeforeISO(today: string, days: number): string {
   return base.toISOString().slice(0, 10);
 }
 
-/** 按 added_at 倒序，其次事件日期倒序 */
+/** 统一时间序：事件日期倒序（最新在前），同日按入库时间、重要性排序 */
 function sortNewEntries(entries: readonly Entry[]): Entry[] {
   return [...entries].sort(
     (a, b) =>
-      (b.added_at ?? '').localeCompare(a.added_at ?? '') ||
       b.date.localeCompare(a.date) ||
+      (b.added_at ?? '').localeCompare(a.added_at ?? '') ||
       b.importance - a.importance ||
       a.id.localeCompare(b.id),
   );
@@ -41,6 +41,7 @@ interface FeedCardProps {
   onSelect: (entry: Entry) => void;
 }
 
+/** 与主线里程碑卡一致的简明标注：日期、类型、贡献度（影响力分数）、类别 */
 function FeedCard({ entry, onSelect }: FeedCardProps): JSX.Element {
   return (
     <article
@@ -50,6 +51,7 @@ function FeedCard({ entry, onSelect }: FeedCardProps): JSX.Element {
       aria-label={`${entry.title}，${entry.date}，影响力 ${entry.importance}/10`}
       data-date={entry.date}
       data-added={entry.added_at}
+      data-importance={entry.importance}
       style={{ borderLeftColor: categoryColor(primaryCategory(entry.categories)) }}
       onClick={() => onSelect(entry)}
       onKeyDown={(event) => {
@@ -61,12 +63,14 @@ function FeedCard({ entry, onSelect }: FeedCardProps): JSX.Element {
     >
       <div className="feed-card-top">
         <span className="feed-card-date mono">{formatDate(entry.date)}</span>
-        {entry.added_at && <span className="feed-added-date mono">入库 {formatDate(entry.added_at)}</span>}
+        {entry.added_at && (
+          <span className="feed-added-date mono">入库 {formatDate(entry.added_at)}</span>
+        )}
         <TypeBadge type={entry.type} />
-        <ImportanceBadge value={entry.importance} />
-        {entry.innovation && <span className="feed-innovation-badge">创新</span>}
-        {entry.needs_review && <ReviewBadge compact />}
-        <NewBadge />
+        <span className="feed-card-score">
+          <ImportanceBadge value={entry.importance} />
+        </span>
+        {entry.innovation && <span className="feed-innovation-badge">创新雷达</span>}
       </div>
       <h2 className="feed-card-title">{entry.title}</h2>
       <p className="feed-card-summary">{entry.summary}</p>
@@ -79,52 +83,20 @@ function FeedCard({ entry, onSelect }: FeedCardProps): JSX.Element {
   );
 }
 
-interface FeedSectionProps {
-  id: string;
-  title: string;
-  entries: Entry[];
-  emptyText: string;
-  onSelect: (entry: Entry) => void;
-}
-
-function FeedSection({ id, title, entries, emptyText, onSelect }: FeedSectionProps): JSX.Element {
-  return (
-    <section className="feed-section" aria-labelledby={id}>
-      <div className="feed-section-head">
-        <h2 className="feed-section-title" id={id}>
-          {title}
-          <span className="feed-section-count mono">{entries.length}</span>
-        </h2>
-      </div>
-      {entries.length > 0 ? (
-        <div className="feed-list">
-          {entries.map((entry) => (
-            <FeedCard key={entry.id} entry={entry} onSelect={onSelect} />
-          ))}
-        </div>
-      ) : (
-        <p className="feed-empty-line">{emptyText}</p>
-      )}
-    </section>
-  );
-}
-
 /**
- * 最新动态 v3：只放「最近 5 天新入库」的事件与思想两块。
- * 创新雷达不再单独成栏，只作为卡片上的内联徽标（innovation: true）。
+ * 最新动态 v4：不再按「事件 / 思想」拆栏，模型发布、事件、思想统一成一条流；
+ * 每条按主线同样的简明标注（类型 + 影响力分数 + 类别），保证每个思想都能被抓到。
  */
 export function FeedPage({ route }: FeedPageProps): JSX.Element {
   const today = useMemo(() => todayISO(), []);
 
-  const { recentEvents, recentInsights, recentCount, latestAddedAt } = useMemo(() => {
+  const { recent, eventCount, insightCount, latestAddedAt } = useMemo(() => {
     const from = daysBeforeISO(today, RECENT_DAYS - 1);
     const freshFrom = daysBeforeISO(today, FRESH_EVENT_DAYS - 1);
     const recent = sortNewEntries(
       ENTRIES.filter(
         (entry) =>
-          entry.added_at !== undefined &&
-          entry.added_at >= from &&
-          entry.date >= freshFrom,
+          entry.added_at !== undefined && entry.added_at >= from && entry.date >= freshFrom,
       ),
     );
     const latest = ENTRIES.reduce((max, entry) => {
@@ -132,9 +104,9 @@ export function FeedPage({ route }: FeedPageProps): JSX.Element {
       return stamp > max ? stamp : max;
     }, '');
     return {
-      recentEvents: recent.filter((entry) => entry.type !== 'insight'),
-      recentInsights: recent.filter((entry) => entry.type === 'insight'),
-      recentCount: recent.length,
+      recent,
+      eventCount: recent.filter((entry) => entry.type !== 'insight').length,
+      insightCount: recent.filter((entry) => entry.type === 'insight').length,
       latestAddedAt: latest,
     };
   }, [today]);
@@ -150,7 +122,7 @@ export function FeedPage({ route }: FeedPageProps): JSX.Element {
           <p className="feed-kicker mono">LATEST · 最新动态</p>
           <h1>最新动态</h1>
           <p className="feed-sub">
-            每天 08:30 抓取；只展示最近 5 天新入库、且事件本身发生在近半年内的事件与思想——旧内容即使刚补录也不进「最新」。
+            每天 08:30 抓取。模型发布、事件与思想不拆栏，统一成一条「最近入库」流：只收最近 5 天入库、且事件发生在近半年内的内容，按时间倒序，每条标出贡献度（影响力分数）。
           </p>
         </div>
         <dl className="feed-meta">
@@ -159,34 +131,35 @@ export function FeedPage({ route }: FeedPageProps): JSX.Element {
             <dd className="mono">{META.builtAt ? formatBuiltAt(META.builtAt) : '未知'}</dd>
           </div>
           <div>
-            <dt>近 5 天入库（近半年）</dt>
-            <dd className="mono">{recentCount}</dd>
+            <dt>最近 5 天入库</dt>
+            <dd className="mono">{recent.length}</dd>
           </div>
         </dl>
       </header>
 
-      <FeedSection
-        id="feed-events-title"
-        title="新入库 · 事件"
-        entries={recentEvents}
-        emptyText="最近 5 天暂无近半年的新入库事件 · 每日 08:30 自动更新"
-        onSelect={openEntry}
-      />
-
-      <FeedSection
-        id="feed-insights-title"
-        title="新入库 · 思想"
-        entries={recentInsights}
-        emptyText="最近 5 天暂无近半年的新入库思想 · 每日 08:30 自动更新"
-        onSelect={openEntry}
-      />
-
-      {recentCount === 0 && (
-        <p className="feed-empty-note">
-          最近 5 天暂无近半年的新入库 · 每日 08:30 自动更新 · 最近一次入库：
-          {latestAddedAt ? formatDate(latestAddedAt) : '暂无记录'}
-        </p>
-      )}
+      <section className="feed-section" aria-labelledby="feed-stream-title">
+        <div className="feed-section-head">
+          <h2 className="feed-section-title" id="feed-stream-title">
+            最近入库
+            <span className="feed-section-count mono">{recent.length}</span>
+          </h2>
+          <span className="feed-section-note">
+            事件 {eventCount} · 思想 {insightCount} · 近半年 · 按时间倒序
+          </span>
+        </div>
+        {recent.length > 0 ? (
+          <div className="feed-list">
+            {recent.map((entry) => (
+              <FeedCard key={entry.id} entry={entry} onSelect={openEntry} />
+            ))}
+          </div>
+        ) : (
+          <p className="feed-empty-line">
+            最近 5 天暂无近半年的新入库 · 每日 08:30 自动更新 · 最近一次入库：
+            {latestAddedAt ? formatDate(latestAddedAt) : '暂无记录'}
+          </p>
+        )}
+      </section>
 
       <footer className="feed-foot">
         <a className="feed-thoughts-link" href="#/thoughts">

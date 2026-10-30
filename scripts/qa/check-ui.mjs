@@ -388,25 +388,47 @@ try {
     filters: document.querySelectorAll('.tb-filter-chip').length,
     cards: document.querySelectorAll('.tb-card').length,
     quotes: document.querySelectorAll('.tb-quote-block').length,
-    activeStatuses: document.querySelectorAll('.tb-theme-status.is-active').length,
-    staleStatuses: document.querySelectorAll('.tb-theme-status.is-stale').length,
     yearStrips: document.querySelectorAll('.tb-years').length,
     yearTicksOn: document.querySelectorAll('.tb-year-tick.is-on').length,
     importance: document.querySelectorAll('.tb-card .badge-importance').length,
+    typeBadges: document.querySelectorAll('.tb-card .badge-type').length,
+    roleBadges: document.querySelectorAll('.tb-role-badge, .tb-arrow').length,
+    statusBadges: document.querySelectorAll('.tb-theme-status, .tb-status-dot').length,
     radarBadges: document.querySelectorAll('.tb-radar-badge').length,
     pins: document.querySelectorAll('.tb-pin').length,
     newDirs: document.querySelectorAll('.tb-theme-new').length,
+    breakthrough: document.querySelectorAll('.tb-card.is-breakthrough').length,
+    landmark: document.querySelectorAll('.tb-card.is-landmark').length,
     scrollWidth: document.documentElement.scrollWidth,
   }));
   check('思想看板 11 个主题', board.themes === 11, JSON.stringify(board));
-  check('思想看板筛选（全部/持续活跃/待补充 + 11 主题 = 14）', board.filters === 14, `${board.filters} 个`);
+  check('思想看板筛选（全部 + 11 主题 = 12）', board.filters === 12, `${board.filters} 个`);
   check('思想看板观点卡 ≥40', board.cards >= 40, `${board.cards} 张`);
   check(
-    '主题持续讨论可见：活跃度徽标 + 年份活动条',
-    board.activeStatuses === 11 && board.staleStatuses === 0 && board.yearStrips === 11 && board.yearTicksOn >= 40,
-    JSON.stringify({ active: board.activeStatuses, strips: board.yearStrips, ticks: board.yearTicksOn }),
+    '主题仍可看出持续讨论：年份活动条',
+    board.yearStrips === 11 && board.yearTicksOn >= 40,
+    JSON.stringify({ strips: board.yearStrips, ticks: board.yearTicksOn }),
   );
-  check('卡片标注影响力分数', board.importance === board.cards && board.importance > 0, `${board.importance}/${board.cards}`);
+  check(
+    '与主线一致的标注：类型 + 贡献度（影响力分数）',
+    board.importance === board.cards && board.typeBadges === board.cards && board.importance > 0,
+    JSON.stringify({ importance: board.importance, type: board.typeBadges, cards: board.cards }),
+  );
+  check(
+    '删除「持续活跃/待补充」标签与角色标签（命题/推进/修正/反驳）',
+    board.statusBadges === 0 && board.roleBadges === 0,
+    JSON.stringify({ status: board.statusBadges, role: board.roleBadges }),
+  );
+  check(
+    '删除置顶/雷达/成熟度徽标（视觉强调只由重要性决定）',
+    board.pins === 0 && board.radarBadges === 0 && board.newDirs >= 1,
+    JSON.stringify({ pins: board.pins, radar: board.radarBadges, newDirs: board.newDirs }),
+  );
+  check(
+    '突破/里程碑强调与重要性同向（≥9 高亮、=10 再强一档）',
+    board.breakthrough >= 1 && board.landmark >= 1,
+    JSON.stringify({ breakthrough: board.breakthrough, landmark: board.landmark }),
+  );
 
   // 时间倒序：每个主题内「最新在左，向右回溯」，不再有置顶打乱
   const orderState = await thoughts.evaluate(() => {
@@ -420,8 +442,6 @@ try {
       allSorted: themes.every((theme) => theme.sorted),
       firstLatest: themes.every((theme) => theme.dates.length < 2 || theme.dates[0] >= theme.dates.at(-1)),
       orderHints: document.querySelectorAll('.tb-track-order').length,
-      reverseArrows: document.querySelectorAll('.tb-arrow.is-reverse').length,
-      leftArrows: Array.from(document.querySelectorAll('.tb-arrow-glyph')).filter((node) => node.textContent?.trim() === '←').length,
     };
   });
   check(
@@ -429,53 +449,12 @@ try {
     orderState.allSorted && orderState.firstLatest,
     JSON.stringify({ sorted: orderState.allSorted, firstLatest: orderState.firstLatest }),
   );
-  check(
-    '倒序提示与回溯箭头（←）',
-    orderState.orderHints >= 11 && orderState.reverseArrows > 0 && orderState.leftArrows === orderState.reverseArrows,
-    JSON.stringify({ hints: orderState.orderHints, reverse: orderState.reverseArrows, left: orderState.leftArrows }),
-  );
-
-  // 创新雷达：融入主题（代表徽标收敛 + 主题头「新方向」聚合），不再有全局筛选
-  check(
-    '创新雷达融入主题（代表徽标 ≤8 + 新方向聚合）',
-    board.radarBadges >= 1 && board.radarBadges <= 8 && board.newDirs >= 1 && board.pins <= 4,
-    JSON.stringify({ radar: board.radarBadges, pins: board.pins, newDirs: board.newDirs }),
-  );
-  const globalRadarChip = await thoughts.evaluate(
-    () => document.querySelector('.tb-filter-chip.is-radar') !== null,
-  );
-  check('已删除全局「创新雷达」筛选', !globalRadarChip);
+  check('倒序提示存在', orderState.orderHints >= 11, JSON.stringify(orderState.orderHints));
   check('思想看板无横向溢出', board.scrollWidth <= 1442, `${board.scrollWidth}`);
   await thoughts.screenshot({ path: path.join(OUT_DIR, 'thoughts-v4.png') });
 
-  // 筛选：持续活跃 / 待补充 / 单主题
-  await (await thoughts.$$('.tb-filter-chip'))[1].click(); // 持续活跃
-  await delays(400);
-  const activeFilterState = await thoughts.evaluate(() => ({
-    themes: document.querySelectorAll('.tb-theme').length,
-    active: document.querySelector('[data-filter="active"]')?.className.includes('is-active') ?? false,
-  }));
-  check(
-    '「持续活跃」筛选：11 个主题全部持续讨论',
-    activeFilterState.active && activeFilterState.themes === 11,
-    JSON.stringify(activeFilterState),
-  );
-  await (await thoughts.$$('.tb-filter-chip'))[2].click(); // 待补充
-  await delays(400);
-  const staleFilterState = await thoughts.evaluate(() => ({
-    themes: document.querySelectorAll('.tb-theme').length,
-    hint: document.querySelector('.tb-filter-empty')?.textContent?.trim() ?? '',
-    active: document.querySelector('[data-filter="stale"]')?.className.includes('is-active') ?? false,
-  }));
-  check(
-    '「待补充」筛选：0 个主题 + 空态提示',
-    staleFilterState.active && staleFilterState.themes === 0 && staleFilterState.hint.length > 0,
-    JSON.stringify(staleFilterState),
-  );
-  await thoughts.screenshot({ path: path.join(OUT_DIR, 'm4-thoughts-stale.png') });
-  await (await thoughts.$$('.tb-filter-chip'))[0].click(); // 全部主题
-  await delays(300);
-  await (await thoughts.$$('.tb-filter-chip'))[3].click(); // 第一个主题
+  // 主题筛选：第一个主题 chip 收窄到单个主题
+  await (await thoughts.$$('.tb-filter-chip'))[1].click();
   await delays(400);
   const filteredThemes = await thoughts.$$eval('.tb-theme', (nodes) => nodes.length);
   check('主题筛选可收窄到单个主题', filteredThemes === 1, `${filteredThemes} 个`);
@@ -580,45 +559,55 @@ try {
     tabs: document.querySelectorAll('.feed-tab').length,
     cards: document.querySelectorAll('.feed-card').length,
     importance: document.querySelectorAll('.feed-card .badge-importance').length,
+    types: document.querySelectorAll('.feed-card .badge-type').length,
     innovationBadges: document.querySelectorAll('.feed-innovation-badge').length,
   }));
   check(
-    '最新动态只有两块：新入库·事件 / 新入库·思想',
-    feedInfo.sections.length === 2 && feedInfo.sections[0].includes('事件') && feedInfo.sections[1].includes('思想'),
+    '最新动态不再按事件/思想拆栏（单一「最近入库」流）',
+    feedInfo.sections.length === 1 && feedInfo.sections[0].includes('最近入库'),
     feedInfo.sections.join(' | '),
   );
   check('最新动态已删除时间窗 tab', feedInfo.tabs === 0, `${feedInfo.tabs} 个`);
   check('最新动态只展示最近 5 天入库（有卡片）', feedInfo.cards >= 1, `${feedInfo.cards} 张`);
-  check('最新动态卡片标注影响力分数', feedInfo.importance === feedInfo.cards && feedInfo.importance > 0, `${feedInfo.importance}/${feedInfo.cards}`);
+  check(
+    '最新动态与主线一致：类型 + 贡献度（影响力分数）',
+    feedInfo.importance === feedInfo.cards && feedInfo.types === feedInfo.cards && feedInfo.importance > 0,
+    JSON.stringify({ importance: feedInfo.importance, types: feedInfo.types, cards: feedInfo.cards }),
+  );
+  check(
+    '创新雷达以内联中性标签出现（不单独成栏、不抢焦点）',
+    feedInfo.innovationBadges <= feedInfo.cards,
+    `${feedInfo.innovationBadges} 个`,
+  );
   const feedFreshness = await feed.evaluate(() => {
     const cutoff = new Date(Date.now() - 180 * 24 * 3600 * 1000).toISOString().slice(0, 10);
     const dates = Array.from(document.querySelectorAll('.feed-card')).map(
       (card) => card.getAttribute('data-date') ?? '',
     );
-    return { cutoff, dates, allFresh: dates.every((date) => date >= cutoff), minDate: dates.slice().sort()[0] ?? '' };
+    return {
+      cutoff,
+      allFresh: dates.every((date) => date >= cutoff),
+      descending: dates.every((date, index) => index === 0 || dates[index - 1] >= date),
+      minDate: dates.slice().sort()[0] ?? '',
+    };
   });
   check(
-    '最新动态只保留近半年事件（补录旧内容不混入）',
-    feedFreshness.allFresh,
-    JSON.stringify({ cutoff: feedFreshness.cutoff, oldest: feedFreshness.minDate }),
-  );
-  check(
-    '最新动态内联创新雷达徽标',
-    feedInfo.innovationBadges >= 1 && feedInfo.innovationBadges <= feedInfo.cards,
-    `${feedInfo.innovationBadges} 个`,
+    '最新动态只保留近半年事件且按时间倒序',
+    feedFreshness.allFresh && feedFreshness.descending,
+    JSON.stringify({ cutoff: feedFreshness.cutoff, oldest: feedFreshness.minDate, desc: feedFreshness.descending }),
   );
   const feedForbidden = await feed.evaluate(() => {
     const text = document.body.textContent ?? '';
     return {
       candidate: text.includes('候选晋升'),
       window: text.includes('7 天') || text.includes('30 天'),
-      radarSection: text.includes('创新雷达'),
+      split: text.includes('新入库 · 事件') || text.includes('新入库 · 思想'),
       tabs: document.querySelectorAll('.feed-tab').length,
     };
   });
   check(
-    '已删除候选晋升池 / 时间窗 / 独立雷达栏目',
-    !feedForbidden.candidate && !feedForbidden.window && !feedForbidden.radarSection && feedForbidden.tabs === 0,
+    '已删除候选晋升池 / 时间窗 / 事件思想拆栏',
+    !feedForbidden.candidate && !feedForbidden.window && !feedForbidden.split && feedForbidden.tabs === 0,
     JSON.stringify(feedForbidden),
   );
   await feed.screenshot({ path: path.join(OUT_DIR, 'feed-v3.png') });

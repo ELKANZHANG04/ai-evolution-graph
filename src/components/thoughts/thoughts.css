@@ -983,3 +983,54 @@
     transform: rotate(90deg);
   }
 }
+
+/* ---------- v5：与主线一致的标注（重要性决定视觉强调） ---------- */
+
+.tb-card {
+  border-left: 2px solid var(--border);
+}
+
+.tb-card .tb-card-top .badge-importance {
+  margin-left: auto;
+}
+
+.tb-card .tb-card-top .badge-type {
+  font-size: 10.5px;
+}
+
+.tb-card.is-breakthrough {
+  border-color: rgba(245, 197, 66, 0.5);
+  border-left-color: rgba(245, 197, 66, 0.5);
+  box-shadow:
+    0 0 0 1px rgba(245, 197, 66, 0.14),
+    0 14px 30px -24px rgba(245, 197, 66, 0.5);
+}
+
+.tb-card.is-breakthrough:hover {
+  border-color: rgba(245, 197, 66, 0.8);
+  box-shadow:
+    0 0 0 1px rgba(245, 197, 66, 0.22),
+    0 16px 34px -22px rgba(245, 197, 66, 0.55);
+}
+
+.tb-card.is-landmark {
+  border-color: rgba(245, 197, 66, 0.72);
+  background: linear-gradient(180deg, rgba(245, 197, 66, 0.06), transparent 48%), var(--bg-elev);
+  box-shadow:
+    0 0 0 1px rgba(245, 197, 66, 0.22),
+    0 0 28px -12px rgba(245, 197, 66, 0.38);
+}
+
+.tb-card.is-breakthrough .tb-year {
+  color: rgba(245, 197, 66, 0.85);
+}
+
+.tb-card .tb-card-foot {
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tb-card .tb-card-foot .badge-category,
+.tb-card .tb-card-foot .category-chip {
+  opacity: 0.85;
+}
