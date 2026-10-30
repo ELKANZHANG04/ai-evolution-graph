@@ -33,18 +33,37 @@
 
 > 我查了一下：GitHub 上 **`ELKANZHANG04`（没有下划线）** 存在（名字 Elkan_Zhang，2026-08 注册，目前 0 个公开仓库）；`ELKAN_ZHANG04`（带下划线）不存在。以下按 `ELKANZHANG04` 写。
 
-1. 在 GitHub 新建公开仓库，例如 `ai-evolution-graph`（**不要**勾选初始化 README，保持空仓库）。
-2. 本机配置好 Git 后，在项目根目录执行：
+仓库已经建好：**https://github.com/ELKANZHANG04/ai-evolution-graph**（公开、空仓库）。
+最终访问地址（已写进 `site.config.json`）：**https://elkanzhang04.github.io/ai-evolution-graph/**
+
+> 注意：DSH 运行环境访问 `github.com:443` 被网络阻断（已验证），所以下面的 **push 必须你在自己电脑上操作**。你的浏览器可以打开 GitHub（已确认），VS Code 也已经装好。
+
+### 方式 A：用 VS Code 推送（推荐，不需要记命令）
+1. 打开 VS Code → 左上 **File → Open Folder…** → 选择项目文件夹
+   `/Users/elkan_zhang/Documents/deepseek-harness/AI前沿知识图谱`
+2. 左侧点 **Source Control**（分支图标，或按 `Ctrl+Shift+G`）。
+3. 点右上角 **…** → **Remote → Add Remote…** → 粘贴：
+   `https://github.com/ELKANZHANG04/ai-evolution-graph.git` → 名字填 `origin` → 回车。
+4. 点分支旁边的 **Publish Branch / 同步图标（↑）** → 弹出 GitHub 登录 → 浏览器登录并授权。
+5. 推送完成后刷新仓库页面，应该能看到全部文件。
+
+### 方式 B：终端命令（需要 Personal Access Token）
+1. GitHub 右上头像 → **Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token**，勾选 `repo`，生成后复制（只显示一次）。
+2. 打开 **Terminal（终端）**，执行：
    ```bash
+   cd "/Users/elkan_zhang/Documents/deepseek-harness/AI前沿知识图谱"
    git remote add origin https://github.com/ELKANZHANG04/ai-evolution-graph.git
    git push -u origin main
    ```
-3. 仓库 → **Settings → Pages → Build and deployment → Source: GitHub Actions**。
-   项目里已经带了 `.github/workflows/deploy.yml`（校验 → 测试 → 构建 → 发布 Pages），每次 push 到 `main` 会自动上线。
-4. 等 1–2 分钟，访问：`https://elkanzhang04.github.io/ai-evolution-graph/`
-5. 项目用的是相对路径资源 + hash 路由，部署到子路径不需要改配置。
+   用户名填 `ELKANZHANG04`，密码位置**粘贴刚才的 token**（不是 GitHub 登录密码）。
 
-> 你之前说 GitHub 打不开：这是网络问题，不影响别人访问你的 Pages。你可以在能访问 GitHub 的网络环境（或代理/加速器）执行 push；也可以让我在能联网的会话里协助。
+### 推送之后：开启 GitHub Pages
+1. 仓库页面 → **Settings → Pages** → Build and deployment → **Source: GitHub Actions**。
+2. 打开 **Actions** 标签，等 `Deploy to GitHub Pages` 跑完（约 1–2 分钟）。
+   如果第一次失败（因为 Pages 还没开），开完 Pages 后点 **Re-run all jobs**。
+3. 访问 **https://elkanzhang04.github.io/ai-evolution-graph/**（可能需要等 1–2 分钟）。
+
+之后每次 push 到 `main` 会自动重新构建发布；每日 08:30 的 GitHub Actions 定时任务也会自动重新构建（但不会自动抓新闻改内容，见第 6 节）。
 
 ---
 
@@ -74,11 +93,13 @@
    { "siteUrl": "https://your-site.example.com" }
    ```
    构建会自动生成 `robots.txt`、`sitemap.xml`，并把 canonical / og:url 注入页面。
-2. 提交搜索引擎（免费）：
+2. 你的站点 sitemap 地址（构建后自动生成）：
+   `https://elkanzhang04.github.io/ai-evolution-graph/sitemap.xml`
+3. 提交搜索引擎（免费）：
    - **Google Search Console**：<https://search.google.com/search-console> → 添加资源 → 验证 → 提交 `sitemap.xml`。
    - **Bing Webmaster Tools**：<https://www.bing.com/webmasters>（可复用 Google 验证）。
    - **百度搜索资源平台**：<https://ziyuan.baidu.com> → 添加站点 → 提交 sitemap。
-3. 目前是"单页应用 + hash 路由"（地址里的 `#/mainline`），搜索引擎大多只认真索引入口页。要更好地被搜到，需要升级「路径路由 + 静态预渲染」，见 [SEO.md](SEO.md)。
+4. 目前是"单页应用 + hash 路由"（地址里的 `#/mainline`），搜索引擎大多只认真索引入口页。要更好地被搜到，需要升级「路径路由 + 静态预渲染」，见 [SEO.md](SEO.md)。
 
 ---
 
