@@ -59,9 +59,11 @@
 
 ### 推送之后：开启 GitHub Pages
 1. 仓库页面 → **Settings → Pages** → Build and deployment → **Source: GitHub Actions**。
-2. 打开 **Actions** 标签，等 `Deploy to GitHub Pages` 跑完（约 1–2 分钟）。
-   如果第一次失败（因为 Pages 还没开），开完 Pages 后点 **Re-run all jobs**。
-3. 访问 **https://elkanzhang04.github.io/ai-evolution-graph/**（可能需要等 1–2 分钟）。
+2. 打开 **Actions** 标签 → 左侧选 `Deploy to GitHub Pages` → 点最新一次运行。
+3. 查看运行详情：`build` job 成功、`deploy` job 失败是**常见情况**——因为第一次运行时 Pages 还没开启。
+   修复：回到运行页 → 右上角 **Re-run all jobs**（或 Actions → 右侧 **Run workflow** 下拉 → Run workflow）。
+4. 等 1–2 分钟，访问 **https://elkanzhang04.github.io/ai-evolution-graph/**（第一次可能需要再等 1–2 分钟）。
+   访问 404 通常表示"还没有一次成功的 deploy"，不是代码问题。
 
 之后每次 push 到 `main` 会自动重新构建发布；每日 08:30 的 GitHub Actions 定时任务也会自动重新构建（但不会自动抓新闻改内容，见第 6 节）。
 
