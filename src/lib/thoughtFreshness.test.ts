@@ -57,6 +57,7 @@ function makeChain(steps: ChainStepInput[]): ThoughtChainData {
     description: '测试描述',
     steps: chainSteps,
     context: [],
+    branches: chainSteps.length > 0 ? [{ label: '测试分支', steps: chainSteps }] : [],
     extraCount: 0,
   };
 }

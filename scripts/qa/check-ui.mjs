@@ -383,84 +383,104 @@ try {
   await thoughts.goto(`${BASE}/#/thoughts`, { waitUntil: 'networkidle0', timeout: 20000 });
   await thoughts.waitForSelector('.tb-board', { timeout: 15000 });
   await delays(600);
+  // ---------- 默认：思维导图视图（每个主题一张） ----------
+  const mapInfo = await thoughts.evaluate(() => ({
+    maps: document.querySelectorAll('.mm').length,
+    roots: document.querySelectorAll('.mm-root').length,
+    branches: document.querySelectorAll('.mm-branch').length,
+    leaves: document.querySelectorAll('.mm-leaf').length,
+    edges: document.querySelectorAll('.mm-edge').length,
+    zoomValue: document.querySelector('.mm-zoom-value')?.textContent?.trim() ?? '',
+    viewButtons: [...document.querySelectorAll('.tb-view-btn')].map((b) => b.textContent?.trim() ?? ''),
+    horizontalScrollMaps: [...document.querySelectorAll('.mm-scroll')].filter((n) => n.scrollWidth > n.clientWidth + 2).length,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  check('每个主题一张思维导图（11 张）', mapInfo.maps === 11 && mapInfo.roots === 11, JSON.stringify(mapInfo));
+  check('导图有根 → 子方向 → 思想三层结构', mapInfo.branches >= 30 && mapInfo.leaves === 90 && mapInfo.edges > mapInfo.leaves, JSON.stringify({ branches: mapInfo.branches, leaves: mapInfo.leaves, edges: mapInfo.edges }));
+  check('导图默认视图 + 可切换看板', mapInfo.viewButtons.join('/') === '思维导图/看板', mapInfo.viewButtons.join('/'));
+
+  // 分支内时间倒序（同一行从左到右最新在前）
+  const branchOrder = await thoughts.evaluate(() => {
+    const rows = [...document.querySelectorAll('.mm-paper')].flatMap((paper) => {
+      const leaves = [...paper.querySelectorAll('.mm-leaf')];
+      const byTop = new Map();
+      for (const leaf of leaves) {
+        const top = leaf.closest('div[style*="position: absolute"]')?.style.top ?? '';
+        const list = byTop.get(top) ?? [];
+        list.push(leaf);
+        byTop.set(top, list);
+      }
+      return [...byTop.values()].map((list) =>
+        list
+          .map((leaf) => ({ x: parseFloat(leaf.closest('div[style*="position: absolute"]')?.style.left ?? '0'), date: leaf.getAttribute('data-date') ?? '' }))
+          .sort((a, b) => a.x - b.x)
+          .map((item) => item.date),
+      );
+    });
+    return rows.every((dates) => dates.every((date, index) => index === 0 || dates[index - 1] >= date));
+  });
+  check('导图每个子方向内按时间倒序', branchOrder);
+
+  // 默认 100% 截图（能看到根/分支/首行节点）
+  await thoughts.screenshot({ path: path.join(OUT_DIR, 'thoughts-v4.png') });
+
+  // 缩放：点 + 后百分比变化；再点「适配」看整张导图
+  const mapZoomBefore = mapInfo.zoomValue;
+  await thoughts.click('.mm-zoom-btn:last-of-type');
+  await delays(300);
+  const mapZoomAfter = await thoughts.$eval('.mm-zoom-value', (node) => node.textContent?.trim() ?? '');
+  check('导图缩放按钮生效', mapZoomBefore !== mapZoomAfter, `${mapZoomBefore} → ${mapZoomAfter}`);
+  await thoughts.click('.mm-zoom-btn.is-fit');
+  await delays(300);
+  await thoughts.screenshot({ path: path.join(OUT_DIR, 'thoughts-v4-fit.png') });
+
+  // 主题筛选：收窄到单个主题（只保留一张导图）
+  await (await thoughts.$$('.tb-filter-chip'))[1].click();
+  await delays(400);
+  const filteredMaps = await thoughts.$$eval('.mm', (nodes) => nodes.length);
+  check('主题筛选可收窄到单个导图', filteredMaps === 1, `${filteredMaps} 张`);
+  await thoughts.screenshot({ path: path.join(OUT_DIR, 'm4-thoughts-filtered.png') });
+  await (await thoughts.$$('.tb-filter-chip'))[0].click();
+  await delays(400);
+
+  // 导图节点 → 详情
+  await thoughts.click('.mm-leaf');
+  await delays(500);
+  check('导图节点打开详情抽屉', (await thoughts.$('.drawer-panel')) !== null);
+  await thoughts.keyboard.press('Escape');
+  await delays(300);
+
+  // ---------- 看板视图（保留信息量） ----------
+  await (await thoughts.$$('.tb-view-btn'))[1].click();
+  await delays(500);
   const board = await thoughts.evaluate(() => ({
     themes: document.querySelectorAll('.tb-theme').length,
     filters: document.querySelectorAll('.tb-filter-chip').length,
     cards: document.querySelectorAll('.tb-card').length,
-    quotes: document.querySelectorAll('.tb-quote-block').length,
-    yearStrips: document.querySelectorAll('.tb-years').length,
-    yearTicksOn: document.querySelectorAll('.tb-year-tick.is-on').length,
     importance: document.querySelectorAll('.tb-card .badge-importance').length,
     typeBadges: document.querySelectorAll('.tb-card .badge-type').length,
+    tracks: document.querySelectorAll('.tb-track').length,
     roleBadges: document.querySelectorAll('.tb-role-badge, .tb-arrow').length,
     statusBadges: document.querySelectorAll('.tb-theme-status, .tb-status-dot').length,
     radarBadges: document.querySelectorAll('.tb-radar-badge').length,
     pins: document.querySelectorAll('.tb-pin').length,
-    newDirs: document.querySelectorAll('.tb-theme-new').length,
-    breakthrough: document.querySelectorAll('.tb-card.is-breakthrough').length,
-    landmark: document.querySelectorAll('.tb-card.is-landmark').length,
     scrollWidth: document.documentElement.scrollWidth,
   }));
-  check('思想看板 11 个主题', board.themes === 11, JSON.stringify(board));
-  check('思想看板筛选（全部 + 11 主题 = 12）', board.filters === 12, `${board.filters} 个`);
-  check('思想看板观点卡 ≥40', board.cards >= 40, `${board.cards} 张`);
-  check(
-    '主题仍可看出持续讨论：年份活动条',
-    board.yearStrips === 11 && board.yearTicksOn >= 40,
-    JSON.stringify({ strips: board.yearStrips, ticks: board.yearTicksOn }),
-  );
-  check(
-    '与主线一致的标注：类型 + 贡献度（影响力分数）',
-    board.importance === board.cards && board.typeBadges === board.cards && board.importance > 0,
-    JSON.stringify({ importance: board.importance, type: board.typeBadges, cards: board.cards }),
-  );
-  check(
-    '删除「持续活跃/待补充」标签与角色标签（命题/推进/修正/反驳）',
-    board.statusBadges === 0 && board.roleBadges === 0,
-    JSON.stringify({ status: board.statusBadges, role: board.roleBadges }),
-  );
-  check(
-    '删除置顶/雷达/成熟度徽标（视觉强调只由重要性决定）',
-    board.pins === 0 && board.radarBadges === 0 && board.newDirs >= 1,
-    JSON.stringify({ pins: board.pins, radar: board.radarBadges, newDirs: board.newDirs }),
-  );
-  check(
-    '突破/里程碑强调与重要性同向（≥9 高亮、=10 再强一档）',
-    board.breakthrough >= 1 && board.landmark >= 1,
-    JSON.stringify({ breakthrough: board.breakthrough, landmark: board.landmark }),
-  );
+  check('看板视图：11 主题 / 12 筛选 / 90 卡', board.themes === 11 && board.filters === 12 && board.cards === 90, JSON.stringify(board));
+  check('看板卡片与主线同标：类型 + 贡献度', board.importance === board.cards && board.typeBadges === board.cards, JSON.stringify({ importance: board.importance, type: board.typeBadges }));
+  check('已删除角色/活跃度/雷达徽标', board.roleBadges === 0 && board.statusBadges === 0 && board.radarBadges === 0 && board.pins === 0, JSON.stringify({ role: board.roleBadges, status: board.statusBadges, radar: board.radarBadges, pins: board.pins }));
+  check('看板无横向溢出', board.scrollWidth <= 1442, `${board.scrollWidth}`);
+  await thoughts.screenshot({ path: path.join(OUT_DIR, 'thoughts-board.png') });
 
-  // 时间倒序：每个主题内「最新在左，向右回溯」，不再有置顶打乱
-  const orderState = await thoughts.evaluate(() => {
-    const themes = Array.from(document.querySelectorAll('.tb-theme')).map((theme) => {
-      const dates = Array.from(theme.querySelectorAll('.tb-card')).map(
-        (card) => card.getAttribute('data-date') ?? '',
-      );
-      return { dates, sorted: dates.every((date, index) => index === 0 || dates[index - 1] >= date) };
+  const boardOrder = await thoughts.evaluate(() => {
+    const themes = [...document.querySelectorAll('.tb-theme')].map((theme) => {
+      const dates = [...theme.querySelectorAll('.tb-card')].map((card) => card.getAttribute('data-date') ?? '');
+      return dates.every((date, index) => index === 0 || dates[index - 1] >= date);
     });
-    return {
-      allSorted: themes.every((theme) => theme.sorted),
-      firstLatest: themes.every((theme) => theme.dates.length < 2 || theme.dates[0] >= theme.dates.at(-1)),
-      orderHints: document.querySelectorAll('.tb-track-order').length,
-    };
+    return themes.every(Boolean);
   });
-  check(
-    '每个主题按时间倒序（最新在左、向右回溯）',
-    orderState.allSorted && orderState.firstLatest,
-    JSON.stringify({ sorted: orderState.allSorted, firstLatest: orderState.firstLatest }),
-  );
-  check('倒序提示存在', orderState.orderHints >= 11, JSON.stringify(orderState.orderHints));
-  check('思想看板无横向溢出', board.scrollWidth <= 1442, `${board.scrollWidth}`);
-  await thoughts.screenshot({ path: path.join(OUT_DIR, 'thoughts-v4.png') });
+  check('看板每个主题按时间倒序', boardOrder);
 
-  // 主题筛选：第一个主题 chip 收窄到单个主题
-  await (await thoughts.$$('.tb-filter-chip'))[1].click();
-  await delays(400);
-  const filteredThemes = await thoughts.$$eval('.tb-theme', (nodes) => nodes.length);
-  check('主题筛选可收窄到单个主题', filteredThemes === 1, `${filteredThemes} 个`);
-  await thoughts.screenshot({ path: path.join(OUT_DIR, 'm4-thoughts-filtered.png') });
-  await (await thoughts.$$('.tb-filter-chip'))[0].click();
-  await delays(300);
   // 展开原文
   const quoteToggle = await thoughts.$('.tb-quote-toggle');
   if (quoteToggle) {
@@ -531,8 +551,19 @@ try {
   const mobileThoughts = await thoughtsMobile.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
     chains: document.querySelectorAll('.tb-theme').length,
+    maps: document.querySelectorAll('.mm').length,
+    mobileRows: document.querySelectorAll('.mm-mobile-row').length,
+    canvasVisible: (() => {
+      const node = document.querySelector('.mm-scroll');
+      if (!node) return null;
+      return window.getComputedStyle(node).display !== 'none';
+    })(),
   }));
-  check('移动端思想看板无横向溢出', mobileThoughts.scrollWidth <= 391, JSON.stringify(mobileThoughts));
+  check(
+    '移动端导图降级为分支分组列表且无横向溢出',
+    mobileThoughts.scrollWidth <= 391 && mobileThoughts.maps === 11 && mobileThoughts.mobileRows === 90 && mobileThoughts.canvasVisible === false,
+    JSON.stringify(mobileThoughts),
+  );
   await thoughtsMobile.screenshot({ path: path.join(OUT_DIR, 'm26-thoughts-mobile.png') });
   await thoughtsMobile.close();
 

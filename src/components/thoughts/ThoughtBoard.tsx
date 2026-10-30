@@ -6,6 +6,7 @@ import { EmptyState } from '../common/EmptyState';
 import type { Entry } from '../../lib/types';
 import type { ThoughtChainData, ThoughtStepData } from '../../lib/thoughtChains';
 import { themeFreshness } from '../../lib/thoughtFreshness';
+import { ThemeMindMap } from './ThemeMindMap';
 import type { ThemeFreshness, ThemeYearBucket } from '../../lib/thoughtFreshness';
 import { categoryColor, primaryCategory } from '../../theme/categories';
 import './thoughts.css';
@@ -199,10 +200,13 @@ function StepCard({ step, selected, onSelect }: StepCardProps): JSX.Element {
   );
 }
 
+type BoardView = 'map' | 'board';
+
 interface ThemeSectionProps {
   chain: ThoughtChainData;
   index: number;
   freshness: ThemeFreshness;
+  view: BoardView;
   selectedId: string | null;
   onSelect: (entry: Entry) => void;
 }
@@ -211,6 +215,7 @@ function ThemeSection({
   chain,
   index,
   freshness,
+  view,
   selectedId,
   onSelect,
 }: ThemeSectionProps): JSX.Element {
@@ -290,30 +295,42 @@ function ThemeSection({
         </div>
       </header>
 
-      <div className="tb-track" ref={trackRef}>
-        {chain.steps.length === 0 && <p className="tb-theme-empty">暂无条目，待补充</p>}
-        {chain.steps.map((step) => (
-          <StepCard
-            key={step.entry.id}
-            step={step}
-            selected={selectedId === step.entry.id}
-            onSelect={onSelect}
-          />
-        ))}
-      </div>
+      {view === 'board' ? (
+        <>
+          <div className="tb-track" ref={trackRef}>
+            {chain.steps.length === 0 && <p className="tb-theme-empty">暂无条目，待补充</p>}
+            {chain.steps.map((step) => (
+              <StepCard
+                key={step.entry.id}
+                step={step}
+                selected={selectedId === step.entry.id}
+                onSelect={onSelect}
+              />
+            ))}
+          </div>
 
-      <p className="tb-track-order">时间倒序：最左为最新，向右逐步回溯</p>
+          <p className="tb-track-order">时间倒序：最左为最新，向右逐步回溯</p>
 
-      {scrollState.scrollable && (
-        <div className="tb-track-nav">
-          <button
-            type="button"
-            className="tb-track-next"
-            onClick={() => scrollBy(scrollState.atEnd ? -1 : 1)}
-          >
-            {scrollState.atEnd ? '← 回到开头' : `向右回溯更早的 ${chain.steps.length} 步 →`}
-          </button>
-        </div>
+          {scrollState.scrollable && (
+            <div className="tb-track-nav">
+              <button
+                type="button"
+                className="tb-track-next"
+                onClick={() => scrollBy(scrollState.atEnd ? -1 : 1)}
+              >
+                {scrollState.atEnd ? '← 回到开头' : `向右回溯更早的 ${chain.steps.length} 步 →`}
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <ThemeMindMap
+          themeId={chain.id}
+          themeTitle={chain.title}
+          branches={chain.branches}
+          selectedId={selectedId}
+          onSelect={onSelect}
+        />
       )}
 
       {context.length > 0 && (
@@ -342,6 +359,7 @@ function ThemeSection({
 /** 思想看板 v5：11 个主题纵向分区 + 时间倒序；标注方式与主线一致（重要性决定视觉强调） */
 export function ThoughtBoard({ chains, selectedId, onSelect }: ThoughtBoardProps): JSX.Element {
   const [activeFilter, setActiveFilter] = useState<string>(FILTER_ALL);
+  const [view, setView] = useState<BoardView>('map');
   const now = useMemo(() => new Date(), []);
 
   const freshnessById = useMemo(() => {
@@ -372,6 +390,28 @@ export function ThoughtBoard({ chains, selectedId, onSelect }: ThoughtBoardProps
 
   return (
     <div className="tb-board">
+      <div className="tb-viewbar">
+        <div className="tb-view-toggle" role="group" aria-label="视图切换">
+          <button
+            type="button"
+            className={`tb-view-btn${view === 'map' ? ' is-active' : ''}`}
+            aria-pressed={view === 'map'}
+            onClick={() => setView('map')}
+          >
+            思维导图
+          </button>
+          <button
+            type="button"
+            className={`tb-view-btn${view === 'board' ? ' is-active' : ''}`}
+            aria-pressed={view === 'board'}
+            onClick={() => setView('board')}
+          >
+            看板
+          </button>
+        </div>
+        <span className="tb-view-hint">每个主题一张导图：根 → 子方向 → 思想（最新在前）</span>
+      </div>
+
       <div className="tb-filter" role="group" aria-label="按思想主题筛选">
         <button
           type="button"
@@ -410,6 +450,7 @@ export function ThoughtBoard({ chains, selectedId, onSelect }: ThoughtBoardProps
           chain={chain}
           index={index}
           freshness={freshness}
+          view={view}
           selectedId={selectedId}
           onSelect={onSelect}
         />

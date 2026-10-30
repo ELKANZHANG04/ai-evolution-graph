@@ -146,9 +146,22 @@ export interface ThoughtStepData {
   arrow: string;
 }
 
+export interface ThoughtBranchConfig {
+  label: string;
+  entryIds: string[];
+}
+
+/** 思维导图分支（每个主题内按子方向分组，用于 mind map 视图） */
+export interface ThoughtBranchData {
+  label: string;
+  steps: ThoughtStepData[];
+}
+
 export interface ThoughtChainData extends Omit<ThoughtChainConfig, 'steps' | 'context'> {
   steps: ThoughtStepData[];
   context: Entry[];
+  /** 子方向分支（mind map 用；按配置顺序，未分配的条目归入「其他讨论」） */
+  branches: ThoughtBranchData[];
   /** 新条目（thought_chain 命中但未写进配置）自动追加的条数 */
   extraCount: number;
 }
@@ -170,6 +183,103 @@ export const ROLE_LABEL: Record<ThoughtRole, string> = {
 export function roleLabel(role: ThoughtRole): string {
   return ROLE_LABEL[role] ?? role;
 }
+
+/** 每个思想主题的子方向分支（思维导图一级分支；未列出的条目自动归入「其他讨论」） */
+export const THEME_BRANCHES: Record<string, ThoughtBranchConfig[]> = {
+  architecture: [
+    { label: '卷积时代', entryIds: ['alexnet-2012', 'resnet-2015'] },
+    {
+      label: '注意力与效率',
+      entryIds: [
+        'attention-is-all-you-need-2017',
+        'vit-paper-2020',
+        'flash-attention-2022',
+        'gqa-2023',
+        'sliding-window-vs-linear-attention-2026',
+        'swila-linear-attention-2026',
+      ],
+    },
+    { label: '非 Transformer 结构', entryIds: ['mamba-ssm-2023', 'mixtral-moe-2024', 'llada-diffusion-2025'] },
+  ],
+  interaction: [
+    {
+      label: '全双工与打断',
+      entryIds: ['lslm-listen-while-speaking-2025', 'audio-interaction-2026', 'bayling-duplex-2026', 'duplex-sla-2026'],
+    },
+    { label: '对话行为控制', entryIds: ['f-actor-2026'] },
+    {
+      label: '产品落地',
+      entryIds: ['siri-2011', 'apple-intelligence-2024', 'chatgpt-advanced-voice-2024', 'openai-realtime-api-2024'],
+    },
+  ],
+  'generative-decision': [
+    { label: '序列决策与推理', entryIds: ['decision-transformer-2021', 'react-2022', 'tree-of-thought-2023'] },
+    { label: '扩散做决策', entryIds: ['diffusion-policy-2023', 'rt-2-2023'] },
+    {
+      label: '可编辑计划与算力分配',
+      entryIds: ['plan-and-patch-2026', 'diffuplan-2026', 'metacognitive-decoding-2026'],
+    },
+  ],
+  memory: [
+    { label: '长上下文与检索', entryIds: ['transformer-xl-2019', 'rag-2020'] },
+    { label: '外挂记忆', entryIds: ['memgpt-2023', 'mem0-2025'] },
+    {
+      label: '持续学习',
+      entryIds: ['sleep-time-compute-2025', 'context-engineering-2025', 'nested-learning-2025'],
+    },
+  ],
+  evaluation: [
+    { label: '静态基准', entryIds: ['mmlu-2020', 'helm-2022', 'swe-bench-2023'] },
+    { label: '人类偏好', entryIds: ['chatbot-arena-2023'] },
+    {
+      label: '能力标价与审计',
+      entryIds: ['arc-agi-2-2025', 'petri-2025', 'anthropic-vuln-testtime-scaling-2026'],
+    },
+  ],
+  scaling: [
+    { label: '定律与质疑', entryIds: ['sutton-bitter-lesson-2019', 'scaling-laws-2020', 'chinchilla-paper-2022'] },
+    { label: '推理时计算', entryIds: ['o1-2024', 'o3-2025', 'rl-scaling-2025'] },
+    { label: '预训练前沿', entryIds: ['gpt-4-5-2025'] },
+  ],
+  software: [
+    {
+      label: '软件抽象',
+      entryIds: [
+        'karpathy-software-2-0-2017',
+        'karpathy-software-3-0-2025',
+        'vibe-coding-2025',
+        'spec-driven-development-2025',
+      ],
+    },
+    { label: '代码模型与工具', entryIds: ['codex-2021', 'github-copilot-2021', 'cursor-2023'] },
+    { label: '编码智能体', entryIds: ['devin-2024', 'warp-agentic-dev-env-2026'] },
+  ],
+  worldmodel: [
+    {
+      label: '世界模型理论',
+      entryIds: ['world-models-2018', 'lecun-world-model-2022', 'hassabis-world-model-2025', 'quo-vadis-world-modeling-2026'],
+    },
+    { label: '视频生成作为世界模拟', entryIds: ['sora-2024', 'veo-3-2025', 'sora-2-2025'] },
+    { label: '语言模型 vs 世界模型', entryIds: ['gpt-4-2023', 'v-jepa-2-2025', 'genie-4-2026'] },
+  ],
+  alignment: [
+    { label: '训练对齐', entryIds: ['instructgpt-paper-2022', 'constitutional-ai-paper-2022'] },
+    { label: '可扩展监督', entryIds: ['superalignment-2023', 'weak-to-strong-2023'] },
+    { label: '欺骗与监控', entryIds: ['alignment-faking-2024', 'cot-monitorability-2025'] },
+    { label: '治理落地', entryIds: ['eu-ai-act-gpai-2025'] },
+  ],
+  agents: [
+    { label: '协议与接口', entryIds: ['mcp-protocol-2024', 'a2a-protocol-2025'] },
+    { label: '工具与操作', entryIds: ['computer-use-2024', 'operator-2025'] },
+    { label: '常驻智能体', entryIds: ['claude-code-2025', 'openai-devday-2026'] },
+    { label: '方法与评测', entryIds: ['building-effective-agents-2024', 'metr-long-tasks-2025'] },
+  ],
+  opensource: [
+    { label: '开源权重浪潮', entryIds: ['llama-2023', 'qwen3-2025', 'gpt-oss-2025'] },
+    { label: '开源与闭源之争', entryIds: ['open-source-ai-path-forward-2024', 'osaid-2024', 'gpt-5-2025'] },
+    { label: '开源推理模型', entryIds: ['deepseek-r1-2025'] },
+  ],
+};
 
 /** 构建思想看板数据：配置步骤 + 按 thought_chain 自动补充的条目 */
 export function buildThoughtChains(entries: readonly Entry[]): ThoughtChainData[] {
@@ -212,7 +322,23 @@ export function buildThoughtChains(entries: readonly Entry[]): ThoughtChainData[
       .map((id) => byId.get(id))
       .filter((entry): entry is Entry => entry !== undefined);
 
-    return { ...config, steps, context, extraCount };
+    // 思维导图分支：按配置顺序收集（步骤已按时间倒序），未分配条目归入「其他讨论」
+    const stepById = new Map(steps.map((step) => [step.entry.id, step]));
+    const assigned = new Set<string>();
+    const branches: ThoughtBranchData[] = [];
+    for (const branchConfig of THEME_BRANCHES[config.id] ?? []) {
+      const branchSteps = branchConfig.entryIds
+        .map((id) => stepById.get(id))
+        .filter((step): step is ThoughtStepData => step !== undefined)
+        // 分支内也保持时间倒序（最新在左）
+        .sort((a, b) => b.entry.date.localeCompare(a.entry.date) || b.entry.importance - a.entry.importance);
+      branchSteps.forEach((step) => assigned.add(step.entry.id));
+      if (branchSteps.length > 0) branches.push({ label: branchConfig.label, steps: branchSteps });
+    }
+    const leftovers = steps.filter((step) => !assigned.has(step.entry.id));
+    if (leftovers.length > 0) branches.push({ label: '其他讨论', steps: leftovers });
+
+    return { ...config, steps, context, branches, extraCount };
   });
 }
 

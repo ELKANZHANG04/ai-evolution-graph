@@ -1,0 +1,342 @@
+/* ---------- 主题思维导图（每个主题一张） ---------- */
+
+.mm {
+  margin-top: 4px;
+}
+
+.mm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0 8px;
+}
+
+.mm-hint {
+  color: var(--text-3);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+}
+
+.mm-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mm-zoom-btn {
+  min-width: 26px;
+  height: 24px;
+  padding: 0 7px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-elev);
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mm-zoom-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.mm-zoom-btn.is-fit {
+  font-size: 11px;
+}
+
+.mm-zoom-value {
+  min-width: 40px;
+  text-align: right;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.mm-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0) 0 0 / 22px 22px,
+    var(--bg);
+}
+
+.mm-canvas {
+  position: relative;
+}
+
+.mm-paper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+.mm-edges {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.mm-edge {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 1.2;
+  opacity: 0.7;
+}
+
+.mm-edge.is-branch {
+  stroke-width: 1.8;
+  opacity: 0.9;
+}
+
+/* 根节点：主题 */
+.mm-root {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--bg-elev-2);
+  box-shadow: var(--shadow-sm, 0 6px 18px -12px rgba(0, 0, 0, 0.6));
+}
+
+.mm-root-kicker {
+  color: var(--text-3);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.mm-root-title {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.mm-root-meta {
+  color: var(--text-3);
+  font-size: 10.5px;
+}
+
+/* 一级分支：子方向 */
+.mm-branch {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-elev);
+  color: var(--text-2);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.mm-branch-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mm-branch-count {
+  flex: 0 0 auto;
+  color: var(--text-3);
+  font-size: 10.5px;
+}
+
+/* 叶子节点：思想/事件小卡 */
+.mm-leaf {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--bg-elev);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    transform 140ms ease;
+}
+
+.mm-leaf.is-insight {
+  background: linear-gradient(168deg, var(--bg-elev-2) 0%, var(--bg-elev) 78%);
+}
+
+.mm-leaf:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-elev-2);
+  transform: translateY(-1px);
+}
+
+.mm-leaf.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.mm-leaf-top {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mm-leaf-year {
+  color: var(--text-3);
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+}
+
+.mm-leaf-kind {
+  padding: 0 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-3);
+  font-size: 9.5px;
+  line-height: 1.6;
+}
+
+.mm-leaf-kind.is-insight {
+  border-color: rgba(167, 139, 250, 0.4);
+  color: #a78bfa;
+}
+
+.mm-leaf-top .badge-importance {
+  margin-left: auto;
+  transform: scale(0.86);
+  transform-origin: right center;
+}
+
+.mm-leaf-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+}
+
+.mm-leaf-summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+
+.mm-leaf-foot {
+  margin-top: auto;
+  min-height: 9px;
+  color: var(--text-3);
+  font-size: 9.5px;
+}
+
+/* 高分节点与主线一致：≥9 金色突破、=10 再强一档 */
+.mm-leaf.is-breakthrough {
+  border-color: rgba(245, 197, 66, 0.5);
+}
+
+.mm-leaf.is-landmark {
+  border-color: rgba(245, 197, 66, 0.75);
+  box-shadow: 0 0 0 1px rgba(245, 197, 66, 0.18);
+}
+
+/* 移动端：导图降级为分支分组列表 */
+.mm-mobile {
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mm-mobile-branch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mm-mobile-label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mm-mobile-label .mono {
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-weight: 400;
+}
+
+.mm-mobile-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-elev);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mm-mobile-year {
+  flex: 0 0 auto;
+  color: var(--text-3);
+  font-size: 10.5px;
+}
+
+.mm-mobile-title {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.mm-mobile-new {
+  margin-right: 5px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(45, 212, 191, 0.16);
+  color: #2dd4bf;
+  font-size: 9.5px;
+}
+
+@media (max-width: 767px) {
+  .mm-scroll {
+    display: none;
+  }
+
+  .mm-mobile {
+    display: flex;
+  }
+
+  .mm-toolbar {
+    padding-top: 0;
+  }
+}

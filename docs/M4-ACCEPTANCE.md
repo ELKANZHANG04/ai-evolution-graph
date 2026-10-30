@@ -27,6 +27,15 @@
 - 卡片标注与主线一致：日期 / 入库日期 / 类型 / 影响力分数 / 类别；创新雷达仅中性小标签。
 - 页头只保留「数据更新于 + 最近 5 天入库 N」。
 
+### 思想看板 v6：每个主题一张思维导图（2026-10-30 三次修订）
+
+- 默认视图改为「思维导图」：11 张主题导图，根（主题）→ 子方向分支（35 个）→ 思想节点（90 个，时间倒序）。
+- 叶子节点=年份/类型/影响力分数/两行标题，hover 看摘要、点击开详情；`importance ≥ 9` 金色边框。
+- 支持 − / 适配 / + 缩放；长分支横向滚动；主题筛选收窄到单张导图。
+- 保留「看板」视图切换（原横排卡片，信息量不丢）。
+- 移动端降级为「子方向分组列表」，无横向溢出。
+- 不做跨主题连线（用户明确不需要）。
+
 ### SEO 静态页（scripts/build-seo-pages.ts）
 
 - `/p/thoughts/`：主题头增加步数/最新月份/近 18 个月/新方向聚合，雷达只标代表条目。
@@ -61,7 +70,9 @@ npm run qa:ui      # ✓ 75/75 通过
 
 ## 4. 截图
 
-- `docs/screenshots/thoughts-v4.png`（思想看板，1440×900）
+- `docs/screenshots/thoughts-v4.png`（思想看板·导图视图 100%，1440×900）
+- `docs/screenshots/thoughts-v4-fit.png`（导图「适配」全览）
+- `docs/screenshots/thoughts-board.png`（看板视图回退）
 - `docs/screenshots/feed-v3.png`（最新动态，1440×900）
 - `docs/screenshots/m4-thoughts-filtered.png`（单主题筛选）
 
