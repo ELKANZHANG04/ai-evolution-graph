@@ -55,7 +55,14 @@ const thoughts: ThoughtChainData[] = JSON.parse(fs.readFileSync(path.join(GENERA
 
 const byId = new Map(entries.map((entry) => [entry.id, entry]));
 const siteUrl = (config.siteUrl || '').replace(/\/+$/, '');
+/** 部署子路径（GitHub Pages: /ai-evolution-graph）；站内链接必须带这个前缀 */
+const basePath = siteUrl ? new URL(siteUrl).pathname.replace(/\/+$/, '') : '';
 const today = new Date().toISOString().slice(0, 10);
+
+/** 站内链接：basePath + 路径 */
+function link(pathname: string): string {
+  return `${basePath}${pathname}`;
+}
 
 function esc(value: unknown): string {
   return String(value ?? '')
@@ -82,10 +89,14 @@ function entryPath(entry: Entry): string {
   return `/p/entry/${entry.id}/`;
 }
 
+function entryHref(entry: Entry): string {
+  return link(entryPath(entry));
+}
+
 function interactiveLink(entry: Entry): string {
-  if (entry.mainline) return `/#/mainline?entry=${entry.id}`;
-  if (entry.type === 'insight') return `/#/thoughts?entry=${entry.id}`;
-  return `/#/feed?entry=${entry.id}`;
+  if (entry.mainline) return link(`/#/mainline?entry=${entry.id}`);
+  if (entry.type === 'insight') return link(`/#/thoughts?entry=${entry.id}`);
+  return link(`/#/feed?entry=${entry.id}`);
 }
 
 function layout(options: { title: string; description: string; canonicalPath: string; body: string; jsonLd?: string }): string {
@@ -137,11 +148,11 @@ ${options.jsonLd ? `<script type="application/ld+json">${options.jsonLd}</script
 </head>
 <body>
 <div class="wrap">
-<nav class="crumb"><a href="/p/">${esc(config.siteName)} · 内容索引</a> / <a href="/">交互版</a></nav>
+<nav class="crumb"><a href="${link('/p/')}">${esc(config.siteName)} · 内容索引</a> / <a href="${link('/')}">交互版</a></nav>
 ${options.body}
 <footer>
 ${esc(config.siteName)} · ${esc(config.description)}<br/>
-数据更新：${esc(meta.builtAt.slice(0, 10))} · 共 ${meta.count} 条 · <a href="/sitemap.xml">sitemap</a> · <a href="/">打开交互版</a>
+数据更新：${esc(meta.builtAt.slice(0, 10))} · 共 ${meta.count} 条 · <a href="${link('/sitemap.xml')}">sitemap</a> · <a href="${link('/')}">打开交互版</a>
 </footer>
 </div>
 </body>
@@ -164,11 +175,11 @@ function relatedBlock(entry: Entry): string {
   const items = [
     ...outgoing.map(
       ({ relation, target }) =>
-        `<li>${esc(relation.type)} · <a href="${entryPath(target)}">${esc(target.title)}</a></li>`,
+        `<li>${esc(relation.type)} · <a href="${entryHref(target)}">${esc(target.title)}</a></li>`,
     ),
     ...incoming.map(
       (candidate) =>
-        `<li><a href="${entryPath(candidate)}">${esc(candidate.title)}</a> · ${esc(candidate.relations.find((relation) => relation.to === entry.id)?.type ?? '')}本条</li>`,
+        `<li><a href="${entryHref(candidate)}">${esc(candidate.title)}</a> · ${esc(candidate.relations.find((relation) => relation.to === entry.id)?.type ?? '')}本条</li>`,
     ),
   ];
   return `<h2>关联条目</h2><ul>${items.join('')}</ul>`;
@@ -218,14 +229,14 @@ function homePage(): void {
 <p class="small">数据更新于 ${esc(meta.builtAt.slice(0, 10))} · ${meta.count} 条条目 · ${meta.needsReview} 条待核对</p>
 <h2>内容入口</h2>
 <ul>
-  <li><a href="/p/mainline/">演进主线</a>：${chapters.length} 个阶段、${meta.count} 条中的精选举措</li>
-  <li><a href="/p/thoughts/">思想看板</a>：${thoughts.length} 个主题的观点演进</li>
-  <li><a href="/p/feed/">最新动态</a>：按事件日期倒序</li>
-  <li><a href="/p/about/">关于与评分标准</a></li>
+  <li><a href="${link('/p/mainline/')}">演进主线</a>：${chapters.length} 个阶段、${meta.count} 条中的精选举措</li>
+  <li><a href="${link('/p/thoughts/')}">思想看板</a>：${thoughts.length} 个主题的观点演进</li>
+  <li><a href="${link('/p/feed/')}">最新动态</a>：按事件日期倒序</li>
+  <li><a href="${link('/p/about/')}">关于与评分标准</a></li>
 </ul>
 <h2>最近条目</h2>
-${recent.map((entry) => `<div class="card"><a class="title" href="${entryPath(entry)}">${esc(entry.title)}</a><p class="small">${esc(entry.date)} · ${esc(categoryLabels(entry.categories))}</p><p>${esc(entry.summary.slice(0, 120))}</p></div>`).join('\n')}
-<a class="cta" href="/">打开交互版 →</a>
+${recent.map((entry) => `<div class="card"><a class="title" href="${entryHref(entry)}">${esc(entry.title)}</a><p class="small">${esc(entry.date)} · ${esc(categoryLabels(entry.categories))}</p><p>${esc(entry.summary.slice(0, 120))}</p></div>`).join('\n')}
+<a class="cta" href="${link('/')}">打开交互版 →</a>
 `;
   writePage('/p/', layout({ title: `${config.siteName} · 内容索引`, description: config.description, canonicalPath: '/p/', body }));
 }
@@ -242,12 +253,12 @@ ${chapter.entries
   .map((id) => byId.get(id))
   .filter((entry): entry is Entry => entry !== undefined)
   .map(
-    (entry) => `<div class="card"><a class="title" href="${entryPath(entry)}">${esc(entry.title)}</a><p class="small">${esc(entry.date)} · 影响力 ${entry.importance}/10</p><p>${esc(entry.significance)}</p></div>`,
+    (entry) => `<div class="card"><a class="title" href="${entryHref(entry)}">${esc(entry.title)}</a><p class="small">${esc(entry.date)} · 影响力 ${entry.importance}/10</p><p>${esc(entry.significance)}</p></div>`,
   )
   .join('\n')}`,
   )
   .join('\n')}
-<a class="cta" href="/#/mainline">打开交互版主线 →</a>
+<a class="cta" href="${link('/#/mainline')}">打开交互版主线 →</a>
 `;
   writePage('/p/mainline/', layout({ title: `AI 演进主线 · ${config.siteName}`, description: 'AI 演进主线的 5 个阶段与里程碑。', canonicalPath: '/p/mainline/', body }));
 }
@@ -265,12 +276,12 @@ ${chain.steps
   .map((step) => {
     const entry = byId.get(step.id);
     if (!entry) return '';
-    return `<div class="card"><p class="small">${esc(ROLE_LABEL[step.role] ?? step.role)} · ${esc(entry.date)}${entry.innovation ? ' · 创新雷达' : ''}</p><a class="title" href="${entryPath(entry)}">${esc(entry.thought_claim ?? entry.title)}</a><p>${esc(entry.thought_summary ?? entry.summary)}</p>${entry.quote ? `<blockquote>“${esc(entry.quote)}”</blockquote><p class="small">${esc(entry.speaker ?? '')} · ${esc(entry.occasion ?? '')}</p>` : ''}</div>`;
+    return `<div class="card"><p class="small">${esc(ROLE_LABEL[step.role] ?? step.role)} · ${esc(entry.date)}${entry.innovation ? ' · 创新雷达' : ''}</p><a class="title" href="${entryHref(entry)}">${esc(entry.thought_claim ?? entry.title)}</a><p>${esc(entry.thought_summary ?? entry.summary)}</p>${entry.quote ? `<blockquote>“${esc(entry.quote)}”</blockquote><p class="small">${esc(entry.speaker ?? '')} · ${esc(entry.occasion ?? '')}</p>` : ''}</div>`;
   })
   .join('\n')}`,
   )
   .join('\n')}
-<a class="cta" href="/#/thoughts">打开交互版思想看板 →</a>
+<a class="cta" href="${link('/#/thoughts')}">打开交互版思想看板 →</a>
 `;
   writePage('/p/thoughts/', layout({ title: `思想看板 · ${config.siteName}`, description: 'AI 思想与观点的递进、修正与反驳。', canonicalPath: '/p/thoughts/', body }));
 }
@@ -282,10 +293,10 @@ function feedPage(): void {
 <p>按事件日期倒序（静态快照，交互版会随每日更新）。</p>
 ${recent
   .map(
-    (entry) => `<div class="card"><p class="small">${esc(entry.date)} · ${esc(TYPE_LABEL[entry.type] ?? entry.type)} · 影响力 ${entry.importance}/10</p><a class="title" href="${entryPath(entry)}">${esc(entry.title)}</a><p>${esc(entry.summary)}</p></div>`,
+    (entry) => `<div class="card"><p class="small">${esc(entry.date)} · ${esc(TYPE_LABEL[entry.type] ?? entry.type)} · 影响力 ${entry.importance}/10</p><a class="title" href="${entryHref(entry)}">${esc(entry.title)}</a><p>${esc(entry.summary)}</p></div>`,
   )
   .join('\n')}
-<a class="cta" href="/#/feed">打开交互版动态 →</a>
+<a class="cta" href="${link('/#/feed')}">打开交互版动态 →</a>
 `;
   writePage('/p/feed/', layout({ title: `最新动态 · ${config.siteName}`, description: 'AI 演进图谱最新动态（静态快照）。', canonicalPath: '/p/feed/', body }));
 }
@@ -305,7 +316,7 @@ function aboutPage(): void {
 <h2>数据与质量</h2>
 <p>数据源为仓库里的 Markdown（YAML frontmatter + 正文），构建期校验并编译为静态数据；不确定的事实/日期/来源会标注「待核对」，不编造来源。每日 08:30 增量更新，重要事件按规则晋升主线、主线满额后末位淘汰。</p>
 <p class="small">数据更新：${esc(meta.builtAt.slice(0, 10))} · 共 ${meta.count} 条 · 待核对 ${meta.needsReview} 条</p>
-<a class="cta" href="/">打开交互版 →</a>
+<a class="cta" href="${link('/')}">打开交互版 →</a>
 `;
   writePage('/p/about/', layout({ title: `关于 · ${config.siteName}`, description: 'AI 演进图谱的数据模型、评分标准与更新机制。', canonicalPath: '/p/about/', body }));
 }
@@ -321,7 +332,17 @@ function main(): void {
   feedPage();
   aboutPage();
   for (const entry of entries) entryPage(entry);
+  // 防回归：检查页面站内链接是否带上了部署子路径（GitHub Pages /repo/）
+  const sample = path.join(DIST, 'p', 'entry', entries[0].id, 'index.html');
+  const html = fs.readFileSync(sample, 'utf8');
+  if (basePath) {
+    const bad = html.match(/(?:href|src)="\/(?!ai-evolution-graph\b)[^"]*"/);
+    if (bad) {
+      throw new Error(`[seo-pages] 站内链接缺少部署前缀 ${basePath}：${bad[0]}`);
+    }
+  }
   console.log(`[seo-pages] 已生成静态内容页：${entries.length + 5} 个（/p/**）`);
+  console.log(`[seo-pages] 链接前缀：${basePath || '(根路径)'}`);
   console.log(`[seo-pages] 生成日期：${today}`);
 }
 
