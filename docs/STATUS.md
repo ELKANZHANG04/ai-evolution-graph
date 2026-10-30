@@ -1,50 +1,57 @@
 # 项目状态（2026-10-30）
 
-> 用途：上下文压缩后快速恢复状态；每次大改动后更新。
+> 上下文压缩后的唯一恢复入口。只记"现在怎样 + 下一步做什么"。每次状态变化就更新这里，不再往对话里堆历史。
+
+## 一句话
+
+「AI 演进图谱」静态站已上线、可被搜索引擎收录、可自行改数据；用户在 VS Code 里 commit + push 即发布。
 
 ## 线上
 
-- 仓库：https://github.com/ELKANZHANG04/ai-evolution-graph（public）
-- 线上地址：https://elkanzhang04.github.io/ai-evolution-graph/
-- 静态内容索引（给搜索引擎）：https://elkanzhang04.github.io/ai-evolution-graph/p/
-- sitemap：https://elkanzhang04.github.io/ai-evolution-graph/sitemap.xml （142 个 URL）
-- 部署方式：push 到 `main` → GitHub Actions（`.github/workflows/deploy.yml`：安装→校验→测试→构建→Pages）
-- 首次部署失败原因（已修）：Pages 未开启；另修复了干净 clone 下 `mainline.ts` 循环依赖导致 Build 失败（commit 134be84）
+| 项 | 值 |
+|---|---|
+| 仓库 | https://github.com/ELKANZHANG04/ai-evolution-graph（public） |
+| 站点 | https://elkanzhang04.github.io/ai-evolution-graph/ |
+| SEO 索引页 | 同上 `/p/`（141 页） |
+| sitemap | 同上 `/sitemap.xml`（142 URL） |
+| 发布链 | push `main` → Actions：install → validate:strict → test → build → Pages（约 1–2 分钟） |
+| 当前版本 | commit `3592d5c`，本地与 origin 已同步，无待推送 |
 
-## 功能状态
+## 功能现状（全部已验收）
 
-- **主线**（默认）：24→27 个里程碑（动态晋升）、5 章、突破点高亮、背景事件可展开标题、章节入口进主题页
-- **主题页**：全部事件列表 + 本章时间轴 + 本章影响图谱（全量数据并入）
-- **思想看板**：11 主题、27 观点卡、创新雷达徽标/筛选、新路线置顶、原文可展开
-- **最新动态**：最近新增（added_at）/ 7·30 天 / 全部、候选晋升池、主线容量 27/32、创新雷达区
-- **全局搜索**：加权 + 高亮 + 类别/年份/影响力筛选 + URL 状态 + `/` 快捷键
-- **每日更新**：会话内定时 08:30（新闻 + 创新信号 → 校验/构建 → `curate:apply` 主线治理）
-- **数据**：136 条（109+ 2012 至今 + 10 奠基；27 insight）；needs_review 22；来源覆盖 ~97%
-- **SEO**：141 个静态内容页（`/p/mainline`、`/p/thoughts`、`/p/feed`、`/p/about`、`/p/entry/<id>`）+ sitemap/canonical/OG/JSON-LD；百度主动推送脚本 `npm run seo:push`
-- **国内上线**：路径已给出（腾讯云 EdgeOne Pages / CloudBase 免备案先上；正式走域名+ICP备案+OSS/COS+CDN），见 docs/DOMESTIC-LAUNCH.md
+- 主线（默认页）：27/32 里程碑，5 章，突破点高亮；章节页=全事件列表+时间轴+影响图谱
+- 思想看板：11 主题、27 观点卡、创新雷达徽标、新路线置顶
+- 最新动态：最近新增/7·30 天/全部 + 候选晋升池 + 创新雷达 + 主线容量条
+- 搜索：加权、高亮、类别/年份/影响力筛选、URL 状态、`/` 快捷键
+- 每日更新：会话内 08:30 定时（新闻+创新信号 → 校验/构建 → `curate:apply` 主线晋升淘汰）
+- 数据：136 条（109 条 2012+ / 10 条奠基 / 其余旧经典），27 insight，22 needs_review，来源覆盖 ~97%
+- 数据治理：`MAINLINE_CAP=32`，重要性≥8 可晋升，满则淘汰最低分（10 分保护）
 
-## 待确认（不阻塞）
+## 未决（不阻塞，等用户拍板）
 
-1. 主题关系图 + 问题线是否开工（方案见 docs/PROPOSAL-M3.md）
-2. 主线容量 32 是否合适
-3. 每日创新扫描 + 自动晋升/淘汰是否照此执行（当前是）
-4. 国内托管平台选择 / 域名 / 是否备案
+1. 国内托管选型：EdgeOne Pages / CloudBase（免备案先上）vs 域名+ICP备案+OSS/COS+CDN
+2. 百度/搜狗/360 提交 sitemap（需用户站长账号；`npm run seo:push` 需 `BAIDU_TOKEN`）
+3. 是否做主题关系图 + 问题线（方案 docs/PROPOSAL-M3.md）
+4. 是否真·路径路由 + 预渲染（让每条记录有独立可收录 URL，SEO 更强）
 
 ## 常用命令
 
 ```bash
-npm run dev            # 本地开发
-npm run build          # 完整构建（含 SEO 静态页 + sitemap）
-npm run build:clean    # 清空生成目录后完整构建（模拟 CI）
-npm run validate       # 数据校验
-npm run test           # 单测
-npm run curate         # 主线治理 dry-run
-npm run seo:push       # 百度主动推送（需 BAIDU_TOKEN）
-npm run qa:ui          # 无头 Chrome 交互验收
+npm run dev         # 本地开发
+npm run build       # 完整构建（含 SEO 静态页 + sitemap）
+npm run validate    # 数据校验
+npm run test        # 单测（36 个）
+npm run curate      # 主线治理 dry-run
+npm run qa:ui       # 无头 Chrome 验收（68 项）
 ```
 
-## 环境注意
+## 环境提醒
 
-- 本机 Node 在 `.tooling/node-runtime/bin/node`（PATH 里没有 node）；pnpm 在 DSH 目录。
-- 当前运行环境**无法访问 github.com**（push 需要用户在 VS Code/本机操作）；api.github.com 与 *.github.io 可访问，可用于线上验证。
-- 站点部署在 GitHub Pages 子路径，所有静态页站内链接必须带 `/ai-evolution-graph/` 前缀（构建脚本已自动处理 + 防回归断言）。
+- Node 在 `.tooling/node-runtime/bin/node`，pnpm 在 DSH 依赖目录（PATH 里没有 node）。
+- 本运行环境**访问不了 github.com**：push 必须用户在 VS Code 点同步；`api.github.com`、`*.github.io` 可用来验证线上。
+- 站点在 GitHub Pages 子路径下，静态页内链必须带 `/ai-evolution-graph/` 前缀（构建脚本已自动加前缀 + 有防回归断言）。
+- 用户非技术：讲解要分步、少术语；改动前先说明"改哪、影响什么、怎么回退"。
+
+## 文档地图
+
+`docs/DECISIONS.md`（为什么这样做）· `docs/UPDATE.md`（加条目）· `docs/DEPLOY.md`（发布/部署）· `docs/SEO.md` · `docs/DOMESTIC-LAUNCH.md`（国内上线）· `docs/BEGINNER-GUIDE.md` · `docs/M1–M3.5-ACCEPTANCE.md`（各里程碑验收）
