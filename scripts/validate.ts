@@ -71,7 +71,7 @@ if (showStats && entries.length > 0) {
 
   const post2012 = entries.filter((entry) => entry.date >= '2012-01-01').length;
   const foundation = entries.filter((entry) => entry.date < '2012-01-01').length;
-  console.log(`2012 至今条目：${post2012}（目标 80–120） | 奠基条目：${foundation}（目标 8–10，简述）`);
+  console.log(`2012 至今条目：${post2012}（种子目标 80–120，动态更新后可持续增长） | 奠基条目：${foundation}（目标 8–10，简述）`);
 }
 
 console.log(`\n${line}`);

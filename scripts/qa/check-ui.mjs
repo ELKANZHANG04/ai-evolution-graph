@@ -401,7 +401,7 @@ try {
     pins: document.querySelectorAll('.tb-pin').length,
     maturity: document.querySelectorAll('.tb-maturity').length,
   }));
-  check('创新雷达卡片有置顶/成熟度标注', radarInfo.pins === 4 && radarInfo.maturity === 11, JSON.stringify(radarInfo));
+  check('创新雷达卡片有置顶/成熟度标注', radarInfo.pins === 4 && radarInfo.maturity >= 11, JSON.stringify(radarInfo));
   const filterButtons = await thoughts.$$('.tb-filter-chip');
   if (filterButtons[1]) {
     await filterButtons[1].click();
@@ -410,7 +410,7 @@ try {
       cards: document.querySelectorAll('.tb-card').length,
       active: document.querySelector('.tb-filter-chip.is-radar')?.className.includes('is-active') ?? false,
     }));
-    check('创新雷达筛选可只看新想法', radarMode.active && radarMode.cards === 11, JSON.stringify(radarMode));
+    check('创新雷达筛选可只看新想法', radarMode.active && radarMode.cards >= 11, JSON.stringify(radarMode));
     await thoughts.screenshot({ path: path.join(OUT_DIR, 'm35-thoughts-radar.png') });
     await filterButtons[0].click();
     await delays(300);
