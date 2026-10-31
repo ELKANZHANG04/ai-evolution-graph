@@ -38,6 +38,10 @@ function main(): void {
   }
 
   fs.mkdirSync(GENERATED_DIR, { recursive: true });
+  // AI 语义层（scripts/ai-links.ts 生成）；未配置 API Key 时为空对象，前端自动回退到规则联系
+  if (!fs.existsSync(path.join(GENERATED_DIR, 'ai-links.json'))) {
+    writeJson('ai-links.json', {});
+  }
 
   const byYear: Record<string, number> = {};
   const byCategory: Record<string, number> = {};

@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "qa:ui": "node scripts/qa/check-ui.mjs",
+    "ai:links": "tsx scripts/ai-links.ts",
     "curate": "tsx scripts/curate.ts",
     "curate:apply": "tsx scripts/curate.ts --apply",
     "seo": "node scripts/build-sitemap.mjs",

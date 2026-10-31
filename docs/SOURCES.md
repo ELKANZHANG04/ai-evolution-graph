@@ -55,3 +55,27 @@ OpenAI / Anthropic / Google DeepMind / Meta AI / Hugging Face / arXiv(cs.CL, cs.
 - 数据可核：有日期、数字、来源；不确定的标 `needs_review`，不编造。
 
 > 每日更新时，若上述方向当天确无重要动态，要在汇报里写「已扫描 XX，无重要新增」，而不是默默跳过。
+
+## 7. 抓取路径（为什么之前会漏）
+
+**教训（2026-10-31）**：此前每日更新主要扫「海外官方博客 + arXiv + Hacker News」，但国内模型发布、产品/终端、具身与市场动态，大量首发在**中文科技媒体**（量子位、机器之心、腾讯科技等），官方英文渠道根本不会覆盖；只看英文 AI 日报会系统性漏掉国内一半的新事件。
+
+**每日抓取顺序（固定）**：
+
+1. 国内媒体首页（10 分钟）：
+   - 量子位 https://www.qbitai.com/ （首页列表即最新；用户指定**优先必刷**）
+   - 机器之心 https://www.jiqizhixin.com/
+   - 腾讯科技 https://tech.qq.com/
+   - 36 氪快讯 https://36kr.com/newsflashes
+   - 智东西 https://zhidx.com/ ，晚点 https://www.latepost.com/ ，钛媒体 https://www.tmtpost.com/ ，界面 https://www.jiemian.com/ ，财联社 https://www.cls.cn/ ，雷峰网 https://www.leiphone.com/ ，爱范儿 https://www.ifanr.com/
+   - 新智元：微信公众号；网易号镜像 https://www.163.com/dy/media/T1472562728078.html
+   - 微信公众号没有公开列表页：用官网 / 网易号 / 搜狗微信发现线索，**引用时用官网正文 URL**。
+2. 国内厂商一手：DeepSeek、阿里通义、Kimi、智谱（https://www.zhipuai.cn/zh/news ）、字节 Seed/豆包、腾讯混元、百度、讯飞、MiniMax、阶跃、商汤、高德、蚂蚁数科、昇腾/寒武纪/摩尔线程/沐曦/壁仞/海光。
+3. 海外官方与论文：OpenAI / Anthropic / Google DeepMind / Meta / Hugging Face / arXiv / Hacker News / TechCrunch / The Information。
+4. 官方与媒体**互相佐证**：
+   - 重要动态 ≥ **2 个独立来源**（媒体 + 官方/厂商，或两家以上媒体）；
+   - 数字冲突时以官方/一手为准，并在条目 summary 注明口径；
+   - 只有单一厂商通稿、无法独立核实的 → `needs_review: true`；
+   - 日期、金额、份额、出货量必须能在来源里找到原文。
+
+**同类高质量信源（持续补充）**：量子位、机器之心、腾讯科技、新智元、智东西、36 氪、晚点 LatePost、钛媒体、界面新闻、财联社、雷峰网、爱范儿、APPSO、甲子光年、DeepTech 深科技、硅星人；海外 The Information、TechCrunch、Ars Technica。

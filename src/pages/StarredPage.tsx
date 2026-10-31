@@ -16,6 +16,8 @@ const GRAPH_WIDTH = 820;
 const GRAPH_HEIGHT = 420;
 const MAX_LABEL = 14;
 
+const TIER_LABEL = { strong: '强', medium: '中', weak: '弱' } as const;
+
 function shortTitle(entry: Entry): string {
   const chars = [...entry.title];
   return chars.length > MAX_LABEL ? `${chars.slice(0, MAX_LABEL).join('')}…` : entry.title;
@@ -66,6 +68,10 @@ export function StarredPage({ route }: { route: HashRoute }): JSX.Element {
             <dt>关联簇</dt>
             <dd className="mono">{connections.clusters.length}</dd>
           </div>
+          <div>
+            <dt>强联系</dt>
+            <dd className="mono">{connections.edges.filter((edge) => edge.tier === 'strong').length}</dd>
+          </div>
         </dl>
       </header>
 
@@ -75,7 +81,7 @@ export function StarredPage({ route }: { route: HashRoute }): JSX.Element {
             <div className="stars-section-head">
               <h2 id="stars-graph-title">灵感网络</h2>
               <span className="stars-section-note">
-                连线 = 自动发现的联系（同主题 / 共同标签 / 引用关系 / 同期）；越粗越强
+                连线 = 自动发现的联系；实线为规则（同主题 / 共同标签 / 引用关系 / 同期），金色虚线为 AI 语义
               </span>
             </div>
             <svg
@@ -97,11 +103,11 @@ export function StarredPage({ route }: { route: HashRoute }): JSX.Element {
                       y1={from.y}
                       x2={to.x}
                       y2={to.y}
-                      className={`stars-edge${dim ? ' is-dim' : ''}`}
-                      strokeWidth={0.8 + Math.min(3, edge.score / 4)}
-                      opacity={dim ? 0.12 : 0.5}
+                      className={`stars-edge tier-${edge.tier}${edge.ai ? ' is-ai' : ''}${dim ? ' is-dim' : ''}`}
+                      strokeWidth={edge.tier === 'strong' ? 2.6 : edge.tier === 'medium' ? 1.6 : 1}
+                      opacity={dim ? 0.1 : edge.tier === 'weak' ? 0.35 : 0.6}
                     >
-                      <title>{edge.reasons.join('；')}</title>
+                      <title>{`${TIER_LABEL[edge.tier]}联系 · ${edge.score.toFixed(0)} 分\n${edge.reasons.join('；')}`}</title>
                     </line>
                   );
                 })}
@@ -142,13 +148,20 @@ export function StarredPage({ route }: { route: HashRoute }): JSX.Element {
                 })}
               </g>
             </svg>
+            <p className={`stars-ai-note${connections.aiEnabled ? ' is-on' : ''}`}>
+              {connections.aiEnabled
+                ? 'AI 语义层已启用：构建期由免费模型（GLM-4.7-Flash）为条目提取主题与关键词，金色虚线 = AI 也认为相关。'
+                : 'AI 语义层未启用：在 GitHub 仓库添加 ZHIPU_API_KEY secret 后重新部署，即可用免费 GLM-4.7-Flash 辅助判断「为什么相关」。当前显示规则联系。'}
+            </p>
           </section>
 
           {connections.edges.length > 0 && (
             <section className="stars-section" aria-labelledby="stars-links-title">
               <div className="stars-section-head">
                 <h2 id="stars-links-title">自动联系</h2>
-                <span className="stars-section-note">Top {Math.min(10, connections.edges.length)}</span>
+                <span className="stars-section-note">
+                  Top {Math.min(10, connections.edges.length)} · 强/中/弱 = 联系强度
+                </span>
               </div>
               <ul className="stars-link-list">
                 {connections.edges.slice(0, 10).map((edge) => {
@@ -157,6 +170,8 @@ export function StarredPage({ route }: { route: HashRoute }): JSX.Element {
                   if (!left || !right) return null;
                   return (
                     <li key={`${edge.a}-${edge.b}`} className="stars-link">
+                      <span className={`stars-tier is-${edge.tier}`}>{TIER_LABEL[edge.tier]}</span>
+                      {edge.ai && <span className="stars-ai-badge">AI</span>}
                       <button type="button" className="stars-link-title" onClick={() => openEntry(left)}>
                         {left.title}
                       </button>

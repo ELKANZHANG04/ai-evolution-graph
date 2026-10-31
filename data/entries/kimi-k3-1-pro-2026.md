@@ -15,6 +15,7 @@ my_comment: "开源权重已经是国产模型争夺开发者与话语权的主�
 tags: [国内, Kimi, 月之暗面, 开源权重, 长上下文, 智能体]
 sources:
   - "https://www.kimi.ai/blog/kimi-k3-1-pro"
+  - "https://www.qbitai.com/2026/10/505108.html"
 relations: []
 needs_review: false
 node_kind: model

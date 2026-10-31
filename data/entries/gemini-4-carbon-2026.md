@@ -15,6 +15,7 @@ my_comment: "榜单领先不等于可用：Carbon 发布即限量给安全防御
 tags: [海外, Google, Gemini, 前沿模型, 长时程, Agent安全]
 sources:
   - "https://www.qbitai.com/2026/10/506227.html"
+  - "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/"
 relations: []
 needs_review: false
 node_kind: model

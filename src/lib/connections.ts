@@ -1,14 +1,20 @@
 import type { Entry } from './types';
+import { hasSemanticLayer, semanticSimilarity } from './semantic';
 
 /**
  * 星标条目的「自动联系」：
- * 不依赖人工连线，按共享主题 / 标签 / 类别 / 引用关系 / 同期出现自动算分。
- * 星标越多，联系越密——最终形成一张个人灵感网络。
+ * 规则层（引用 / 同主题 / 共同标签 / 类别 / 同期）+ AI 语义层（可选，构建期生成的主题与关键词）。
+ * 输出带强度分级（强 / 中 / 弱），避免所有联系看起来一样。
  */
+export type ConnectionTier = 'strong' | 'medium' | 'weak';
+
 export interface StarConnection {
   a: string;
   b: string;
   score: number;
+  tier: ConnectionTier;
+  /** 是否有 AI 语义层贡献 */
+  ai: boolean;
   reasons: string[];
 }
 
@@ -17,6 +23,8 @@ export interface StarConnectionResult {
   degree: Record<string, number>;
   clusters: string[][];
   isolated: string[];
+  /** AI 语义层是否可用 */
+  aiEnabled: boolean;
 }
 
 /** 单个标签太泛，不参与计分 */
@@ -34,8 +42,41 @@ function dayDistance(left: string, right: string): number {
   return Math.abs(a - b) / 86_400_000;
 }
 
-/** 计算两条星标条目之间的联系强度与理由；score ≥ 2 才认为有联系 */
-export function connectionBetween(left: Entry, right: Entry): { score: number; reasons: string[] } {
+/** 标签稀有度：越少见的共享标签，联系越有意义（IDF） */
+function tagWeight(tag: string, df: Map<string, number>, total: number): number {
+  const frequency = df.get(tag) ?? 1;
+  return Math.min(2.5, 1 + Math.log((total + 1) / (frequency + 1)));
+}
+
+function tierOf(score: number): ConnectionTier {
+  if (score >= 11) return 'strong';
+  if (score >= 6) return 'medium';
+  return 'weak';
+}
+
+export interface ConnectionOptions {
+  /** 全库条目，用于计算标签稀有度 */
+  corpus?: readonly Entry[];
+  tagDf?: Map<string, number>;
+  total?: number;
+}
+
+/** 计算两条条目的规则联系强度与理由 */
+export function connectionBetween(
+  left: Entry,
+  right: Entry,
+  options: ConnectionOptions = {},
+): { score: number; reasons: string[] } {
+  const corpus = options.corpus;
+  const total = options.total ?? ((corpus?.length ?? 0) || 1);
+  let df = options.tagDf;
+  if (!df && corpus) {
+    df = new Map<string, number>();
+    for (const entry of corpus) {
+      for (const tag of new Set(entry.tags)) df.set(tag, (df.get(tag) ?? 0) + 1);
+    }
+  }
+
   const reasons: string[] = [];
   let score = 0;
 
@@ -54,7 +95,10 @@ export function connectionBetween(left: Entry, right: Entry): { score: number; r
 
   const sharedTags = shared(left.tags, right.tags).filter((tag) => !GENERIC_TAGS.has(tag));
   if (sharedTags.length > 0) {
-    score += Math.min(6, sharedTags.length * 2);
+    const weighted = sharedTags
+      .slice(0, 4)
+      .reduce((sum, tag) => sum + 2 * tagWeight(tag, df ?? new Map(), total), 0);
+    score += Math.min(9, weighted);
     reasons.push(`共同标签：${sharedTags.slice(0, 3).join('、')}`);
   }
 
@@ -70,22 +114,44 @@ export function connectionBetween(left: Entry, right: Entry): { score: number; r
     reasons.push('同期出现（90 天内）');
   }
 
-  return { score, reasons };
+  return { score: Math.round(score * 10) / 10, reasons };
 }
 
 /** 计算所有星标条目之间的自动联系、连通簇与孤立点 */
 export function buildStarConnections(entries: readonly Entry[], ids: readonly string[]): StarConnectionResult {
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   const nodes = ids.filter((id) => byId.has(id));
+  const aiEnabled = hasSemanticLayer();
   const edges: StarConnection[] = [];
+
+  // 预计算标签稀有度（IDF）
+  const tagDf = new Map<string, number>();
+  for (const entry of entries) {
+    for (const tag of new Set(entry.tags)) tagDf.set(tag, (tagDf.get(tag) ?? 0) + 1);
+  }
+  const total = entries.length;
 
   for (let i = 0; i < nodes.length; i += 1) {
     for (let j = i + 1; j < nodes.length; j += 1) {
       const left = byId.get(nodes[i]);
       const right = byId.get(nodes[j]);
       if (!left || !right) continue;
-      const { score, reasons } = connectionBetween(left, right);
-      if (score >= 2) edges.push({ a: left.id, b: right.id, score, reasons });
+
+      const rule = connectionBetween(left, right, { tagDf, total });
+      const semantic = semanticSimilarity(left.id, right.id);
+      const score = Math.round((rule.score + semantic.score) * 10) / 10;
+      const ai = semantic.score > 0;
+
+      if (score >= 2) {
+        edges.push({
+          a: left.id,
+          b: right.id,
+          score,
+          tier: tierOf(score),
+          ai,
+          reasons: [...rule.reasons, ...semantic.reasons],
+        });
+      }
     }
   }
 
@@ -117,7 +183,13 @@ export function buildStarConnections(entries: readonly Entry[], ids: readonly st
   const clusters = [...groups.values()].filter((group) => group.length > 1);
   const isolated = [...groups.values()].filter((group) => group.length === 1).map(([id]) => id);
 
-  return { edges: edges.sort((a, b) => b.score - a.score), degree, clusters, isolated };
+  return {
+    edges: edges.sort((a, b) => b.score - a.score),
+    degree,
+    clusters,
+    isolated,
+    aiEnabled,
+  };
 }
 
 /** 轻量力导向布局：返回画布坐标（确定性，无第三方依赖） */
@@ -147,7 +219,6 @@ export function layoutStarGraph(
   const iterations = 240;
   for (let step = 0; step < iterations; step += 1) {
     const alpha = 1 - step / iterations;
-    // 斥力
     for (let i = 0; i < count; i += 1) {
       for (let j = i + 1; j < count; j += 1) {
         const p = positions.get(ids[i]) as { x: number; y: number };
@@ -169,7 +240,6 @@ export function layoutStarGraph(
         q.y -= uy;
       }
     }
-    // 引力（有联系的节点互相靠近）
     for (const edge of edges) {
       const p = positions.get(edge.a);
       const q = positions.get(edge.b);
@@ -177,7 +247,7 @@ export function layoutStarGraph(
       const dx = q.x - p.x;
       const dy = q.y - p.y;
       const dist = Math.max(1, Math.hypot(dx, dy));
-      const force = (dist - 150) * 0.012 * Math.min(1.6, edge.score / 4) * alpha;
+      const force = (dist - 150) * 0.012 * Math.min(1.8, edge.score / 5) * alpha;
       const ux = (dx / dist) * force;
       const uy = (dy / dist) * force;
       p.x += ux;
@@ -185,7 +255,6 @@ export function layoutStarGraph(
       q.x -= ux;
       q.y -= uy;
     }
-    // 向心力 + 边界
     for (const id of ids) {
       const point = positions.get(id) as { x: number; y: number };
       point.x += (cx - point.x) * 0.006;

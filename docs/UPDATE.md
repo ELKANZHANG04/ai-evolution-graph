@@ -10,7 +10,7 @@
 
 ## 2. 单次更新步骤
 
-1. **抓取候选**（Web）：完整源清单见 `docs/SOURCES.md`，每天必须国内 + 海外两边都扫。
+1. **抓取候选**（Web）：完整源清单与**固定抓取顺序**见 `docs/SOURCES.md` §7——先国内媒体首页（量子位 → 机器之心 → 腾讯科技 → 36 氪/智东西/晚点/钛媒体/界面/财联社）→ 再国内厂商官网 → 再海外官方/arXiv；重要动态至少 2 个独立来源互证（媒体 + 官方），单一厂商通稿标 needs_review。
    - 海外官方：OpenAI / Anthropic / Google DeepMind / Meta AI / Google AI / Hugging Face；
    - 论文：arXiv cs.CL、cs.LG、cs.AI 最新；
    - 海外社区与媒体：Hacker News、TechCrunch、The Information；
