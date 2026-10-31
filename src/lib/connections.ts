@@ -142,7 +142,7 @@ export function buildStarConnections(entries: readonly Entry[], ids: readonly st
       const score = Math.round((rule.score + semantic.score) * 10) / 10;
       const ai = semantic.score > 0;
 
-      if (score >= 2) {
+      if (score >= 2 || (ai && score >= 1.5)) {
         edges.push({
           a: left.id,
           b: right.id,

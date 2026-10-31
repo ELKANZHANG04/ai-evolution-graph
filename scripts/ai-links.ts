@@ -14,7 +14,31 @@ import type { Entry } from '../src/lib/types';
 
 const ENDPOINT = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
 const MODEL = process.env.AI_MODEL ?? 'glm-4.7-flash';
-const BATCH_SIZE = 8;
+const BATCH_SIZE = 5;
+const CONCURRENCY = 3;
+const MAX_RETRIES = 2;
+
+/** 受控主题词表：强制模型复用同一套主题，避免每条内容自创主题导致无法匹配 */
+export const CANONICAL_THEMES = [
+  '智能体与自动化',
+  '语音与实时交互',
+  '多模态与视觉',
+  '开源与权重',
+  '模型架构与训练',
+  '推理时计算',
+  '评测与安全',
+  '对齐与治理',
+  '世界模型与具身',
+  '国产算力与芯片',
+  '搜索与推荐',
+  '办公与生产力',
+  '长上下文与记忆',
+  '资本市场与商业化',
+  '政策与监管',
+  '历史与思想',
+  '产品与终端',
+  '其他',
+] as const;
 const GENERATED_DIR = path.join(ROOT, 'src', 'generated');
 const OUTPUT = path.join(GENERATED_DIR, 'ai-links.json');
 
@@ -110,13 +134,23 @@ async function callModel(apiKey: string, batch: Entry[]): Promise<AiLinkMap> {
       const record = item as Record<string, unknown>;
       const id = typeof record.id === 'string' ? record.id : '';
       if (!id) continue;
+      const canonical = new Set<string>(CANONICAL_THEMES);
+      const themes = Array.isArray(record.themes)
+        ? record.themes
+            .filter((t): t is string => typeof t === 'string')
+            .map((t) => t.trim())
+            .filter((t) => canonical.has(t))
+            .slice(0, 3)
+        : [];
       result[id] = {
         core: typeof record.core === 'string' ? record.core.slice(0, 80) : '',
-        themes: Array.isArray(record.themes)
-          ? record.themes.filter((t): t is string => typeof t === 'string').slice(0, 5)
-          : [],
+        themes: themes.length > 0 ? themes : ['其他'],
         keywords: Array.isArray(record.keywords)
-          ? record.keywords.filter((t): t is string => typeof t === 'string').slice(0, 8)
+          ? record.keywords
+              .filter((t): t is string => typeof t === 'string')
+              .map((t) => t.trim())
+              .filter(Boolean)
+              .slice(0, 8)
           : [],
       };
     }
@@ -147,23 +181,59 @@ async function main(): Promise<void> {
   const pending = entries.filter((entry) => !result[entry.id]);
   console.log(`· AI 语义层：${pending.length}/${entries.length} 条待处理（模型 ${MODEL}）`);
 
-  let failed = 0;
+  const batches: Entry[][] = [];
   for (let offset = 0; offset < pending.length; offset += BATCH_SIZE) {
-    const batch = pending.slice(offset, offset + BATCH_SIZE);
+    batches.push(pending.slice(offset, offset + BATCH_SIZE));
+  }
+
+  let failed = 0;
+  let processed = 0;
+  const runBatch = async (batch: Entry[], attempt: number): Promise<void> => {
     try {
       const links = await callModel(apiKey, batch);
       Object.assign(result, links);
+      processed += batch.length;
       fs.writeFileSync(OUTPUT, `${JSON.stringify(result)}\n`);
-      console.log(`  ✓ ${Math.min(offset + BATCH_SIZE, pending.length)}/${pending.length}`);
+      console.log(`  ✓ ${processed}/${pending.length}`);
     } catch (error) {
+      if (attempt < MAX_RETRIES) {
+        await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)));
+        return runBatch(batch, attempt + 1);
+      }
       failed += 1;
-      console.warn(`  ⚠ 批次 ${offset / BATCH_SIZE + 1} 失败：${(error as Error).message}`);
+      console.warn(`  ⚠ 批次失败（${batch.map((entry) => entry.id).join(',')}）：${(error as Error).message}`);
     }
-    await new Promise((resolve) => setTimeout(resolve, 800));
+  };
+
+  // 有限并发
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(CONCURRENCY, batches.length) }, async () => {
+    while (cursor < batches.length) {
+      const index = cursor;
+      cursor += 1;
+      await runBatch(batches[index], 1);
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    }
+  });
+  await Promise.all(workers);
+
+  // 兜底：对仍缺失的条目逐条重试一次（降低批量解析失败的影响）
+  const missing = entries.filter((entry) => !result[entry.id]);
+  if (missing.length > 0) {
+    console.log(`· 逐条补漏 ${missing.length} 条`);
+    for (const entry of missing) {
+      await runBatch([entry], 1);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
   }
 
   fs.writeFileSync(OUTPUT, `${JSON.stringify(result)}\n`);
-  console.log(`✓ AI 语义层完成：${Object.keys(result).length} 条（失败批次 ${failed}）`);
+  const coverage = entries.filter((entry) => result[entry.id]).length;
+  console.log(`✓ AI 语义层完成：${coverage}/${entries.length} 条（失败批次 ${failed}）`);
+  if (coverage < entries.length) {
+    console.warn(`  ⚠ 仍有 ${entries.length - coverage} 条未生成，可在下次部署自动补齐`);
+  }
+  return;
 }
 
 main().catch((error) => {

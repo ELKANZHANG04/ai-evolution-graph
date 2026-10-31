@@ -27,14 +27,31 @@ export function getAiLinkInfo(id: string): AiLinkInfo | undefined {
 }
 
 function normalize(token: string): string {
-  return token.trim().toLowerCase().replace(/\s+/g, ' ');
+  return token
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_\-·/、，,()（）[\]【】]+/g, '');
+}
+
+/** 关键词匹配：完全一致，或包含关系（如 Agent / Agentic、GLM / GLM-4-Voice） */
+export function keywordMatch(left: string, right: string): boolean {
+  const a = normalize(left);
+  const b = normalize(right);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (Math.min(a.length, b.length) >= 2 && (a.includes(b) || b.includes(a))) return true;
+  return false;
 }
 
 function overlap(left: string[] = [], right: string[] = []): string[] {
-  const rightSet = new Set(right.map(normalize));
-  return [...new Set(left)]
-    .filter((item) => item.trim().length > 0)
-    .filter((item) => rightSet.has(normalize(item)));
+  return [...new Set(left)].filter((item) =>
+    right.some((candidate) => keywordMatch(item, candidate)),
+  );
+}
+
+/** 已生成语义数据的条目数（用于 UI 说明） */
+export function getSemanticEntryCount(): number {
+  return Object.keys(LINKS).length;
 }
 
 export interface SemanticSimilarity {

@@ -5,6 +5,7 @@ import { StarButton } from '../components/common/StarButton';
 import { EmptyState } from '../components/common/EmptyState';
 import type { HashRoute } from '../hooks/useHashRoute';
 import { buildStarConnections, layoutStarGraph } from '../lib/connections';
+import { getAiLinkInfo, getSemanticEntryCount } from '../lib/semantic';
 import { ENTRIES, getEntryById } from '../lib/data';
 import { formatDate } from '../lib/format';
 import { useStars } from '../lib/stars';
@@ -150,7 +151,7 @@ export function StarredPage({ route }: { route: HashRoute }): JSX.Element {
             </svg>
             <p className={`stars-ai-note${connections.aiEnabled ? ' is-on' : ''}`}>
               {connections.aiEnabled
-                ? 'AI 语义层已启用：构建期由免费模型（GLM-4.7-Flash）为条目提取主题与关键词，金色虚线 = AI 也认为相关。'
+                ? `AI 语义层已启用（已为 ${getSemanticEntryCount()} 条生成主题/关键词）：金色虚线 = AI 也认为相关，悬停/联系列表可看到 AI 理由。`
                 : 'AI 语义层未启用：在 GitHub 仓库添加 ZHIPU_API_KEY secret 后重新部署，即可用免费 GLM-4.7-Flash 辅助判断「为什么相关」。当前显示规则联系。'}
             </p>
           </section>
@@ -223,6 +224,20 @@ export function StarredPage({ route }: { route: HashRoute }): JSX.Element {
                   </div>
                   <h3 className="stars-card-title">{entry.title}</h3>
                   <p className="stars-card-summary">{entry.summary}</p>
+                  {(() => {
+                    const info = getAiLinkInfo(entry.id);
+                    if (!info) return null;
+                    const label = [
+                      ...(info.themes ?? []).slice(0, 2),
+                      ...(info.keywords ?? []).slice(0, 2),
+                    ].join(' · ');
+                    return (
+                      <p className="stars-card-ai" title={`AI 主题：${(info.themes ?? []).join('、')}；关键词：${(info.keywords ?? []).join('、')}`}>
+                        <span className="stars-ai-badge">AI</span>
+                        {label}
+                      </p>
+                    );
+                  })()}
                   <CategoryChips categories={entry.categories} max={3} />
                 </article>
               ))}
