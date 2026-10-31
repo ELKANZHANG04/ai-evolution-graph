@@ -7,9 +7,9 @@
 
 | 媒体 | 官网/入口 | 强项 |
 |---|---|---|
-| 机器之心 | https://www.jiqizhixin.com/ | 论文、模型技术、产业 |
-| 量子位 | https://www.qbitai.com/ | 模型发布、具身智能、产品 |
-| 腾讯科技 | https://tech.qq.com/ | 大厂动态、商业化、访谈 |
+| 机器之心 | https://www.jiqizhixin.com/ | 论文、模型技术、产业（每日必刷） |
+| 量子位 | https://www.qbitai.com/ | 模型发布、具身智能、终端、AI 应用（**每日优先必刷**，用户指定） |
+| 腾讯科技 | https://tech.qq.com/ | 大厂动态、商业化、访谈（每日必刷） |
 | 新智元 | 微信公众号 / 网易号同步 | 模型与芯片发布、快讯 |
 | 智东西 | https://zhidx.com/ | 芯片、硬件、机器人 |
 | 36 氪 | https://36kr.com/ | 融资、商业化、快讯 |

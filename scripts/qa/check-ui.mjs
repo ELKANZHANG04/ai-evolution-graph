@@ -280,8 +280,11 @@ try {
     nodes.map((node) => (node.textContent ?? '').replace(/\s+/g, '')),
   );
   check(
-    '主导航 4 项（全量数据已并入主题页）',
-    navItems.length === 4 && navItems.join('|').includes('主线') && !navItems.join('').includes('全量数据'),
+    '主导航 5 项（含「我的灵感」星标区）',
+    navItems.length === 5 &&
+      navItems.join('|').includes('主线') &&
+      navItems.join('|').includes('我的灵感') &&
+      !navItems.join('').includes('全量数据'),
     navItems.join('/'),
   );
   const chapterOpeners = await mainPage.$$eval('.ml-chapter-open', (nodes) => nodes.length);
@@ -648,6 +651,94 @@ try {
   await feed.keyboard.press('Escape');
   await delays(300);
   check('最新动态无 console/page error', feedErrors.length === 0, feedErrors.slice(0, 2).join(' | '));
+
+  /* ---------------- M4：我的灵感（星标 + 自动联系） ---------------- */
+  const stars = await browser.newPage();
+  await stars.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
+  const starErrors = [];
+  stars.on('pageerror', (error) => starErrors.push(error.message));
+  stars.on('console', (message) => {
+    if (message.type() === 'error') starErrors.push(message.text());
+  });
+  await stars.goto(`${BASE}/#/feed`, { waitUntil: 'networkidle0', timeout: 20000 });
+  await stars.waitForSelector('.feed-card', { timeout: 15000 });
+  await delays(400);
+  await stars.click('.feed-card .star-btn');
+  await delays(300);
+  const starredFromFeed = await stars.evaluate(() => ({
+    stored: (() => {
+      try {
+        return JSON.parse(localStorage.getItem('aeg.stars.v1') ?? '[]');
+      } catch {
+        return [];
+      }
+    })(),
+    active: document.querySelector('.feed-card .star-btn')?.getAttribute('aria-pressed') ?? 'false',
+  }));
+  check(
+    '最新动态卡片可加星并写入本地',
+    Array.isArray(starredFromFeed.stored) && starredFromFeed.stored.length === 1 && starredFromFeed.active === 'true',
+    JSON.stringify(starredFromFeed),
+  );
+
+  // 注入两条有自动联系的星标，验证「我的灵感」页与自动连线
+  await stars.evaluate(() => {
+    localStorage.setItem(
+      'aeg.stars.v1',
+      JSON.stringify(['gemini-4-carbon-2026', 'google-gemini-1b-users-2026']),
+    );
+  });
+  // hash 导航不会重建模块缓存，直接改 hash 后 reload，模拟用户刷新进入
+  await stars.evaluate(() => {
+    location.hash = '#/stars';
+  });
+  await stars.reload({ waitUntil: 'networkidle0', timeout: 20000 });
+  await stars.waitForSelector('.stars-page', { timeout: 15000 });
+  await delays(500);
+  const starsPage = await stars.evaluate(() => ({
+    cards: document.querySelectorAll('.stars-card').length,
+    nodes: document.querySelectorAll('.stars-node').length,
+    edges: document.querySelectorAll('.stars-edge').length,
+    links: document.querySelectorAll('.stars-link').length,
+    stats: [...document.querySelectorAll('.stars-stats dd')].map((node) => node.textContent?.trim()),
+  }));
+  check(
+    '「我的灵感」展示星标与统计',
+    starsPage.cards === 2 && starsPage.nodes === 2 && starsPage.links >= 1,
+    JSON.stringify(starsPage),
+  );
+  check(
+    '星标之间自动产生联系（连线 + 理由）',
+    starsPage.edges >= 1 && starsPage.stats[1] !== '0',
+    JSON.stringify({ edges: starsPage.edges, stats: starsPage.stats }),
+  );
+
+  // 刷新后仍保留
+  await stars.reload({ waitUntil: 'networkidle0' });
+  await delays(400);
+  const persisted = await stars.$$eval('.stars-card', (nodes) => nodes.length);
+  check('星标在本机浏览器持久保存（刷新后仍在）', persisted === 2, `${persisted} 张`);
+  await stars.screenshot({ path: path.join(OUT_DIR, 'stars-v1.png') });
+
+  // 取消星标
+  await stars.click('.stars-card .star-btn');
+  await delays(300);
+  const afterRemove = await stars.$$eval('.stars-card', (nodes) => nodes.length);
+  check('取消星标后从列表移除', afterRemove === 1, `${afterRemove} 张`);
+
+  // 抽屉里也能加星
+  await stars.goto(`${BASE}/#/feed?entry=gemini-4-carbon-2026`, { waitUntil: 'networkidle0' });
+  await delays(500);
+  const drawerStar = await stars.evaluate(() => ({
+    exists: document.querySelector('.drawer-panel .star-btn') !== null,
+    pressed: document.querySelector('.drawer-panel .star-btn')?.getAttribute('aria-pressed') ?? '',
+  }));
+  check('详情抽屉内也可加星（状态同步）', drawerStar.exists, JSON.stringify(drawerStar));
+
+  // 清理测试数据，避免污染用户本地
+  await stars.evaluate(() => localStorage.removeItem('aeg.stars.v1'));
+  check('我的灵感无 console/page error', starErrors.length === 0, starErrors.slice(0, 2).join(' | '));
+  await stars.close();
 
   /* ---------------- M3：全局搜索 ---------------- */
   const search = await browser.newPage();

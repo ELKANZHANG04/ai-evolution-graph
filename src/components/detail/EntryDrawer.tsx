@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { JSX } from 'react';
 import { CategoryChips, ImportanceBadge, NewBadge, ReviewBadge, TypeBadge } from '../common/Badges';
+import { StarButton } from '../common/StarButton';
 import { incomingRelations, relatedEntries } from '../../lib/data';
 import { buildCitation, formatDateLong, hostnameOf, isRecent } from '../../lib/format';
 import type { Entry } from '../../lib/types';
@@ -169,6 +170,7 @@ export function EntryDrawer({ entry, onClose, onNavigate }: EntryDrawerProps): J
             </h2>
             {entry.title_en && <p className="drawer-title-en">{entry.title_en}</p>}
           </div>
+          <StarButton entryId={entry.id} size="md" />
           <button
             type="button"
             className="drawer-close"

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { JSX } from 'react';
 import { CategoryChips, ImportanceBadge, TypeBadge } from '../components/common/Badges';
+import { StarButton } from '../components/common/StarButton';
 import type { HashRoute } from '../hooks/useHashRoute';
 import { ENTRIES, META } from '../lib/data';
 import { formatBuiltAt, formatDate, todayISO } from '../lib/format';
@@ -71,6 +72,7 @@ function FeedCard({ entry, onSelect }: FeedCardProps): JSX.Element {
           <ImportanceBadge value={entry.importance} />
         </span>
         {entry.innovation && <span className="feed-innovation-badge">创新雷达</span>}
+        <StarButton entryId={entry.id} />
       </div>
       <h2 className="feed-card-title">{entry.title}</h2>
       <p className="feed-card-summary">{entry.summary}</p>

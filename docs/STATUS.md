@@ -22,9 +22,10 @@
 - 主线（默认页）：27/32 里程碑，5 章，突破点高亮；章节页=全事件列表+时间轴+影响图谱
 - 思想看板 v6：每个主题一张思维导图（11 张；根→子方向→思想，35 分支/90 节点），默认导图视图、可切回看板；叶子=年份/类型/影响力/两行标题，hover 摘要、点击详情；支持缩放/长分支横滚；移动端降级分支列表；不再有角色/活跃度/雷达徽标，视觉强调只由重要性决定
 - 最新动态 v4：单一「最近入库」流（不再拆事件/思想），窗口=近 5 天入库 + 事件近 180 天；按时间倒序；每条标类型与影响力分数；创新雷达仅中性小标签
+- **我的灵感**（`#/stars`）：任意条目点 ☆ 加星（localStorage 本地保存，不上传）；星标条目自动计算联系（引用/同主题/共同标签/同期）并生成「灵感网络」与联系列表
 - 搜索：加权、高亮、类别/年份/影响力筛选、URL 状态、`/` 快捷键
 - 每日更新：会话内 08:30 定时（新闻+创新信号 → 校验/构建 → `curate:apply` 主线晋升淘汰）
-- 数据：196 条（185 条 2012+ / 11 条奠基），41 insight，25 needs_review，来源覆盖 98%；11 个思想主题共 90 步；10-31 每日更新新增 5 条（国行 Apple Intelligence 接入千问、商汤 Loop-9B 开源、智元 Worken 度量、Gemini 用户达 10 亿、英伟达收购 Hugging Face 遭美司法部问询）
+- 数据：203 条（192 条 2012+ / 11 条奠基），41 insight，25 needs_review，来源覆盖 98%；11 个思想主题共 90 步；10-31 补 5 条日报 + 7 条量子位动态（DeepSeek Super-agent、Gemini 4 Carbon、智元 GO-3、百度 APP、联想天禧、蚂蚁 Ling-3.1、IDC MaaS）
 - 数据治理：`MAINLINE_CAP=32`，重要性≥8 可晋升，满则淘汰最低分（10 分保护）
 
 ## 未决（不阻塞，等用户拍板）
@@ -42,7 +43,7 @@ npm run build       # 完整构建（含 SEO 静态页 + sitemap）
 npm run validate    # 数据校验
 npm run test        # 单测（42 个）
 npm run curate      # 主线治理 dry-run
-npm run qa:ui       # 无头 Chrome 验收（75 项，含导图视图）
+npm run qa:ui       # 无头 Chrome 验收（82 项，含导图与星标）
 ```
 
 ## 环境提醒
@@ -54,4 +55,4 @@ npm run qa:ui       # 无头 Chrome 验收（75 项，含导图视图）
 
 ## 文档地图
 
-`docs/DECISIONS.md`（为什么这样做，§13–§16 是本轮定义）· `docs/SOURCES.md`（信息源清单：国内媒体/厂商/算力/市场）· `docs/PROPOSAL-M4.md`（本轮方案）· `docs/M4-ACCEPTANCE.md`（本轮验收）· `docs/UPDATE.md`（加条目）· `docs/DEPLOY.md`（发布/部署）· `docs/SEO.md` · `docs/DOMESTIC-LAUNCH.md`（国内上线）· `docs/BEGINNER-GUIDE.md` · `docs/M1–M3.5-ACCEPTANCE.md`（各里程碑验收）
+`docs/DECISIONS.md`（为什么这样做，§13–§17 是本轮定义）· `docs/SOURCES.md`（信息源清单：国内媒体/厂商/算力/市场）· `docs/PROPOSAL-M4.md`（本轮方案）· `docs/M4-ACCEPTANCE.md`（本轮验收）· `docs/UPDATE.md`（加条目）· `docs/DEPLOY.md`（发布/部署）· `docs/SEO.md` · `docs/DOMESTIC-LAUNCH.md`（国内上线）· `docs/BEGINNER-GUIDE.md` · `docs/M1–M3.5-ACCEPTANCE.md`（各里程碑验收）

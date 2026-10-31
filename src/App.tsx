@@ -10,6 +10,7 @@ import { ChapterPage } from './pages/ChapterPage';
 import { ThoughtBoardPage } from './pages/ThoughtBoardPage';
 import { AboutPage } from './pages/AboutPage';
 import { FeedPage } from './pages/FeedPage';
+import { StarredPage } from './pages/StarredPage';
 import { SearchPage } from './pages/SearchPage';
 
 export default function App() {
@@ -17,7 +18,7 @@ export default function App() {
 
   // Feed/Search 两个页面只更新 ?entry=，详情抽屉在应用层统一渲染
   const pageDrawerEntry =
-    route.view === 'feed' || route.view === 'search'
+    route.view === 'feed' || route.view === 'search' || route.view === 'stars'
       ? getEntryById(route.params.get('entry')) ?? null
       : null;
 
@@ -64,11 +65,12 @@ export default function App() {
         {route.view === 'chapter' && <ChapterPage route={route} />}
         {route.view === 'thoughts' && <ThoughtBoardPage route={route} />}
         {route.view === 'feed' && <FeedPage route={route} />}
+        {route.view === 'stars' && <StarredPage route={route} />}
         {route.view === 'search' && <SearchPage route={route} />}
         {route.view === 'about' && <AboutPage />}
       </main>
 
-      {(route.view === 'feed' || route.view === 'search') && (
+      {(route.view === 'feed' || route.view === 'search' || route.view === 'stars') && (
         <EntryDrawer
           entry={pageDrawerEntry}
           onClose={() => route.setParams((params) => params.delete('entry'))}
