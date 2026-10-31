@@ -239,6 +239,59 @@ async function main(): Promise<void> {
     }
   }
 
+  // 兜底：API 未覆盖的条目用标签/类别规则映射补齐，保证任何星标组合都有语义层
+  const CAT_THEME: Record<string, string> = {
+    architecture: '模型架构与训练',
+    model: '模型架构与训练',
+    opensource: '开源与权重',
+    alignment: '对齐与治理',
+    multimodal: '多模态与视觉',
+    agent: '智能体与自动化',
+    hardware: '国产算力与芯片',
+    product: '产品与终端',
+    thought: '历史与思想',
+    org: '资本市场与商业化',
+  };
+  const TAG_RULES: Array<[RegExp, string]> = [
+    [/语音|全双工|audio|speech/i, '语音与实时交互'],
+    [/搜索|推荐|search/i, '搜索与推荐'],
+    [/办公|生产力|office/i, '办公与生产力'],
+    [/推理|reasoning|test.?time/i, '推理时计算'],
+    [/评测|benchmark|红队|安全/i, '评测与安全'],
+    [/监管|政策|法案|合规|治理/i, '政策与监管'],
+    [/世界模型|具身|机器人|人形|world.?model|robot/i, '世界模型与具身'],
+    [/记忆|长上下文|上下文|memory|long.?context/i, '长上下文与记忆'],
+    [/开源|open.?source|权重/i, '开源与权重'],
+    [/算力|芯片|gpu|昇腾|寒武纪|硬件|infra/i, '国产算力与芯片'],
+    [/历史|思想|哲学|图灵/i, '历史与思想'],
+    [/智能体|agent|mcp|工具/i, '智能体与自动化'],
+    [/多模态|视觉|视频|图像|生成/i, '多模态与视觉'],
+    [/市场|融资|ipo|资本|商业/i, '资本市场与商业化'],
+    [/产品|终端|手机|pc|应用/i, '产品与终端'],
+  ];
+  const GENERIC_TAGS = new Set(['AI', 'ai', '国内', '海外']);
+  let bootstrapped = 0;
+  for (const entry of entries) {
+    if (result[entry.id]) continue;
+    const themes = new Set<string>();
+    for (const category of entry.categories) {
+      const theme = CAT_THEME[category];
+      if (theme) themes.add(theme);
+    }
+    const tags = entry.tags.filter((tag) => !GENERIC_TAGS.has(tag));
+    for (const tag of tags) {
+      for (const [pattern, theme] of TAG_RULES) if (pattern.test(tag)) themes.add(theme);
+    }
+    const themeList = [...themes].slice(0, 3);
+    result[entry.id] = {
+      core: (entry.significance || entry.summary || entry.title).slice(0, 50),
+      themes: themeList.length > 0 ? themeList : ['其他'],
+      keywords: [...new Set([...tags.slice(0, 5), ...entry.categories.slice(0, 2)])].slice(0, 6),
+    };
+    bootstrapped += 1;
+  }
+  if (bootstrapped > 0) console.log(`· 规则回退补齐 ${bootstrapped} 条`);
+
   fs.writeFileSync(OUTPUT, `${JSON.stringify(result)}\n`);
   const coverage = entries.filter((entry) => result[entry.id]).length;
   console.log(`✓ AI 语义层完成：${coverage}/${entries.length} 条（失败批次 ${failed}）`);
