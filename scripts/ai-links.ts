@@ -41,8 +41,8 @@ export const CANONICAL_THEMES = [
   '产品与终端',
   '其他',
 ] as const;
-const GENERATED_DIR = path.join(ROOT, 'src', 'generated');
-const OUTPUT = path.join(GENERATED_DIR, 'ai-links.json');
+const DATA_DIR = path.join(ROOT, 'src', 'data');
+const OUTPUT = path.join(DATA_DIR, 'ai-links.json');
 
 interface AiEntryLink {
   core: string;
@@ -163,7 +163,7 @@ async function callModel(apiKey: string, batch: Entry[]): Promise<AiLinkMap> {
 }
 
 async function main(): Promise<void> {
-  fs.mkdirSync(GENERATED_DIR, { recursive: true });
+  fs.mkdirSync(DATA_DIR, { recursive: true });
   const apiKey = process.env.ZHIPU_API_KEY?.trim() ?? '';
   if (!apiKey) {
     if (!fs.existsSync(OUTPUT)) fs.writeFileSync(OUTPUT, '{}\n');

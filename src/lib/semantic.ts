@@ -1,8 +1,5 @@
-// 用 glob 可选加载：干净 clone（未运行 ai:links）时文件不存在也不会让测试/构建失败
-const AI_LINK_MODULES = import.meta.glob<{ default: Record<string, AiLinkInfo> }>(
-  '../generated/ai-links.json',
-  { eager: true },
-);
+// 语义数据 = 仓库内种子（人工/历史生成）+ CI 构建期增量（缓存恢复后合并）
+import aiLinkSeed from '../data/ai-links.json';
 
 /**
  * AI 语义层（可选）：构建期用免费大模型（如智谱 GLM-4.7-Flash）为每个条目提取
@@ -15,8 +12,7 @@ export interface AiLinkInfo {
   keywords?: string[];
 }
 
-const LINKS: Record<string, AiLinkInfo> =
-  Object.values(AI_LINK_MODULES)[0]?.default ?? {};
+const LINKS = (aiLinkSeed ?? {}) as Record<string, AiLinkInfo>;
 
 export function hasSemanticLayer(): boolean {
   return Object.keys(LINKS).length > 0;
