@@ -14,9 +14,11 @@ import type { Entry } from '../src/lib/types';
 
 const ENDPOINT = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
 const MODEL = process.env.AI_MODEL ?? 'glm-4.7-flash';
-const BATCH_SIZE = 5;
-const CONCURRENCY = 3;
-const MAX_RETRIES = 2;
+const BATCH_SIZE = 8;
+const CONCURRENCY = 2;
+const MAX_RETRIES = 1;
+/** 整体时间预算：免费 API 慢/限流时不拖垮 CI，超出后保留已生成部分 */
+const TIME_BUDGET_MS = 5 * 60 * 1000;
 
 /** 受控主题词表：强制模型复用同一套主题，避免每条内容自创主题导致无法匹配 */
 export const CANONICAL_THEMES = [
@@ -107,7 +109,7 @@ async function callModel(apiKey: string, batch: Entry[]): Promise<AiLinkMap> {
     ],
   };
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 90_000);
+  const timer = setTimeout(() => controller.abort(), 45_000);
   try {
     const response = await fetch(ENDPOINT, {
       method: 'POST',
@@ -169,15 +171,18 @@ async function main(): Promise<void> {
     return;
   }
 
+  // 按时间倒序：优先保证近期内容（用户最可能加星的最新动态）有 AI 语义
   const entries = loadEntries()
     .map((item) => item.entry)
-    .filter((entry): entry is Entry => entry !== null);
+    .filter((entry): entry is Entry => entry !== null)
+    .sort((left, right) => right.date.localeCompare(left.date) || right.importance - left.importance);
   if (entries.length === 0) {
     console.log('· 没有条目，跳过 AI 语义层');
     return;
   }
 
   const result = readExisting();
+  const deadline = Date.now() + TIME_BUDGET_MS;
   const pending = entries.filter((entry) => !result[entry.id]);
   console.log(`· AI 语义层：${pending.length}/${entries.length} 条待处理（模型 ${MODEL}）`);
 
@@ -205,25 +210,32 @@ async function main(): Promise<void> {
     }
   };
 
-  // 有限并发
+  // 有限并发 + 时间预算（超出预算保留已生成部分，避免拖垮 CI）
   let cursor = 0;
+  let outOfTime = false;
   const workers = Array.from({ length: Math.min(CONCURRENCY, batches.length) }, async () => {
     while (cursor < batches.length) {
+      if (Date.now() > deadline) {
+        outOfTime = true;
+        return;
+      }
       const index = cursor;
       cursor += 1;
       await runBatch(batches[index], 1);
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 400));
     }
   });
   await Promise.all(workers);
+  if (outOfTime) console.warn('· 达到时间预算，剩余条目留待下次部署补齐');
 
-  // 兜底：对仍缺失的条目逐条重试一次（降低批量解析失败的影响）
+  // 兜底：预算内对少量缺失条目逐条补漏
   const missing = entries.filter((entry) => !result[entry.id]);
-  if (missing.length > 0) {
-    console.log(`· 逐条补漏 ${missing.length} 条`);
-    for (const entry of missing) {
+  if (missing.length > 0 && Date.now() < deadline) {
+    console.log(`· 逐条补漏 ${Math.min(10, missing.length)} 条`);
+    for (const entry of missing.slice(0, 10)) {
+      if (Date.now() > deadline) break;
       await runBatch([entry], 1);
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 400));
     }
   }
 
