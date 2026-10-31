@@ -484,4 +484,5 @@ M2.6 已交付（2026-10-29）：思想看板升级为 7 个主题（16 条引�
 - 选 **智谱 GLM-4.7-Flash**（2026-01-19 发布，30B 总参 / 3B 激活，开源 + BigModel 免费 API；替代 GLM-4.5-Flash）。理由：免费、中文好、够快，官方明确「开源、免费」；用户记得的 GLM-4.0 已被 4.7-Flash 取代。
 - **密钥不进浏览器**：AI 语义在 **GitHub Actions 构建期**生成（`scripts/ai-links.ts`，环境变量 `ZHIPU_API_KEY`），产物仅 `src/generated/ai-links.json`（主题/关键词，不含密钥）；前端只读产物。
 - 用户只需在 GitHub 仓库 Settings → Secrets and variables → Actions 添加 `ZHIPU_API_KEY`（智谱开放平台 bigmodel.cn 申请），下一次部署自动生效；未配置或 API 失败时自动回退规则联系，不影响站点。
+- **2026-11-01 已启用**：用户配置 secret 后触发部署，CI 用 GLM-4.7-Flash 为全部 204 条生成「核心思想 / 主题 / 关键词」；线上验证 `#/stars` 已出现金色虚线 AI 连线与 `AI` 徽章（示例星标中 2/4 条联系含 AI 语义贡献），联系同时分为强/中/弱。
 - 本地想预览：`ZHIPU_API_KEY=xxx npm run ai:links && npm run build`。
