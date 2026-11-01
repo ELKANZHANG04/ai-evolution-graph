@@ -105,9 +105,21 @@ function buildPositionPrompt(mainlineContext: string): string {
 ${mainlineContext}
 
 任务：对用户给出的每条内容，判断它在主线中的位置：
-- position：一句话（≤50 字），说明它接在哪个主线里程碑之后、属于哪个阶段，是延续、补充还是突破；尽量点出一个里程碑标题，不要空泛。
+- position：一句中文点评（50–70 字，必须带中文标点），结构建议：「接在「里程碑标题」之后，属于<阶段>的延续/补充/突破；它……」。必须引用里程碑的精确标题（不是 id），不要夹生英文，不要空泛。
 - mainlineIds：1–2 个最相关的主线里程碑 id，必须从上面列表里选；如果确实属于主线之外的新方向，给空数组 []。
+示例：{"id":"示例","position":"接在「GPT-5」之后，属于推理、开源与智能体阶段的延续：它把……","mainlineIds":["gpt-5-2025"]}
 只输出 JSON：{"items":[{"id":"...","position":"...","mainlineIds":["..."]}]}，不要解释。`;
+}
+
+function humanizePosition(position: string, titleById: Map<string, string>): string {
+  let text = position.trim().replace(/\s+/g, ' ');
+  const ids = [...titleById.keys()].sort((left, right) => right.length - left.length);
+  for (const id of ids) {
+    if (!text.includes(id)) continue;
+    text = text.split(id).join(`「${titleById.get(id) ?? id}」`);
+  }
+  if (!/[。！？]$/.test(text)) text += '。';
+  return text.slice(0, 100);
 }
 
 function compressPositionEntry(entry: Entry): Record<string, unknown> {
@@ -407,6 +419,7 @@ async function main(): Promise<void> {
     .filter((entry) => entry.mainline && entry.date >= '2012-01-01')
     .sort((left, right) => left.date.localeCompare(right.date));
   const validMainlineIds = new Set(mainlineEntries.map((entry) => entry.id));
+  const mainlineTitleById = new Map(mainlineEntries.map((entry) => [entry.id, entry.title]));
   const positionTargets = entries
     .filter((entry) => {
       if (entry.mainline) return false;
@@ -431,7 +444,11 @@ async function main(): Promise<void> {
         const model = attempt >= 2 ? POSITION_FALLBACK_MODEL : MODEL;
         const links = await callPositionModel(apiKey, batch, prompt, validMainlineIds, model);
         for (const [id, value] of Object.entries(links)) {
-          result[id] = { ...(result[id] ?? { core: '', themes: ['其他'], keywords: [] }), ...value };
+          result[id] = {
+            ...(result[id] ?? { core: '', themes: ['其他'], keywords: [] }),
+            ...value,
+            position: humanizePosition(value.position, mainlineTitleById),
+          };
         }
         positionDone += Object.keys(links).length;
         fs.writeFileSync(OUTPUT, `${JSON.stringify(result)}\n`);
