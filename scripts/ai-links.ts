@@ -23,8 +23,14 @@ const MAX_RETRIES = 1;
 const TIME_BUDGET_MS = 5 * 60 * 1000;
 /** 位置解读只补最近一批条目，避免每次部署都把全部 211 条重跑一遍 */
 const POSITION_RECENT_DATE = '2026-09-01';
-const POSITION_BUDGET_MS = 3 * 60 * 1000;
+const POSITION_BUDGET_MS = 4 * 60 * 1000;
 const POSITION_BATCH_SIZE = 6;
+/** 免费模型并发一高就 429：串行 + 退避重试，只补最近 24 条，先保证成功率 */
+const POSITION_MAX_ENTRIES = 24;
+const POSITION_CONCURRENCY = 1;
+const POSITION_RETRY_DELAYS = [3000, 8000, 20000];
+/** 4.7-Flash 429 时退到上一代免费模型，先保证有位置文案 */
+const POSITION_FALLBACK_MODEL = 'glm-4.5-flash';
 
 /** 受控主题词表：强制模型复用同一套主题，避免每条内容自创主题导致无法匹配 */
 export const CANONICAL_THEMES = [
@@ -122,9 +128,10 @@ async function callPositionModel(
   batch: Entry[],
   systemPrompt: string,
   validMainlineIds: Set<string>,
+  model: string = MODEL,
 ): Promise<Record<string, { position: string; mainline: string[] }>> {
   const body = {
-    model: MODEL,
+    model,
     temperature: 0.2,
     messages: [
       { role: 'system', content: systemPrompt },
@@ -400,12 +407,15 @@ async function main(): Promise<void> {
     .filter((entry) => entry.mainline && entry.date >= '2012-01-01')
     .sort((left, right) => left.date.localeCompare(right.date));
   const validMainlineIds = new Set(mainlineEntries.map((entry) => entry.id));
-  const positionTargets = entries.filter((entry) => {
-    if (entry.mainline) return false;
-    if (result[entry.id]?.position) return false;
-    if (entry.date >= POSITION_RECENT_DATE) return true;
-    return (entry.added_at ?? '') >= POSITION_RECENT_DATE;
-  });
+  const positionTargets = entries
+    .filter((entry) => {
+      if (entry.mainline) return false;
+      if (result[entry.id]?.position) return false;
+      if (entry.date >= POSITION_RECENT_DATE) return true;
+      return (entry.added_at ?? '') >= POSITION_RECENT_DATE;
+    })
+    .sort((left, right) => right.date.localeCompare(left.date) || right.importance - left.importance)
+    .slice(0, POSITION_MAX_ENTRIES);
   if (positionTargets.length > 0) {
     const prompt = buildPositionPrompt(formatMainlineContext(mainlineEntries));
     const positionDeadline = Date.now() + POSITION_BUDGET_MS;
@@ -418,7 +428,8 @@ async function main(): Promise<void> {
     }
     const runPositionBatch = async (batch: Entry[], attempt: number): Promise<void> => {
       try {
-        const links = await callPositionModel(apiKey, batch, prompt, validMainlineIds);
+        const model = attempt >= 2 ? POSITION_FALLBACK_MODEL : MODEL;
+        const links = await callPositionModel(apiKey, batch, prompt, validMainlineIds, model);
         for (const [id, value] of Object.entries(links)) {
           result[id] = { ...(result[id] ?? { core: '', themes: ['其他'], keywords: [] }), ...value };
         }
@@ -426,16 +437,22 @@ async function main(): Promise<void> {
         fs.writeFileSync(OUTPUT, `${JSON.stringify(result)}\n`);
         console.log(`  ✓ 位置 ${positionDone}/${positionTargets.length}`);
       } catch (error) {
-        if (attempt < MAX_RETRIES) {
-          await new Promise((resolve) => setTimeout(resolve, 1200 * (attempt + 1)));
-          return runPositionBatch(batch, attempt + 1);
+        const message = (error as Error).message;
+        if (attempt <= POSITION_RETRY_DELAYS.length) {
+          const wait = POSITION_RETRY_DELAYS[attempt - 1] ?? 20000;
+          // 免费模型 429 时退避重试；其它错误也最多重试一轮
+          if (message.includes('429') || attempt <= 1) {
+            console.warn(`  · 位置批次重试（第 ${attempt} 次）：${message.slice(0, 80)}`);
+            await new Promise((resolve) => setTimeout(resolve, wait));
+            return runPositionBatch(batch, attempt + 1);
+          }
         }
         positionFailed += 1;
-        console.warn(`  ⚠ 位置批次失败（${batch.map((entry) => entry.id).join(',')}）：${(error as Error).message}`);
+        console.warn(`  ⚠ 位置批次失败（${batch.map((entry) => entry.id).join(',')}）：${message.slice(0, 120)}`);
       }
     };
     let positionCursor = 0;
-    const positionWorkers = Array.from({ length: Math.min(2, positionBatches.length) }, async () => {
+    const positionWorkers = Array.from({ length: Math.min(POSITION_CONCURRENCY, positionBatches.length) }, async () => {
       while (positionCursor < positionBatches.length) {
         if (Date.now() > positionDeadline) return;
         const index = positionCursor;
