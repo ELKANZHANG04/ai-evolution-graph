@@ -652,7 +652,7 @@ try {
   await delays(300);
   check('最新动态无 console/page error', feedErrors.length === 0, feedErrors.slice(0, 2).join(' | '));
 
-  /* ---------------- M4：我的灵感（星标 + 自动联系） ---------------- */
+  /* ---------------- M4：我的灵感（主线网络 + 星标） ---------------- */
   const stars = await browser.newPage();
   await stars.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
   const starErrors = [];
@@ -681,63 +681,149 @@ try {
     JSON.stringify(starredFromFeed),
   );
 
-  // 注入两条有自动联系的星标，验证「我的灵感」页与自动连线
-  await stars.evaluate(() => {
-    localStorage.setItem(
-      'aeg.stars.v1',
-      JSON.stringify(['gemini-4-carbon-2026', 'google-gemini-1b-users-2026']),
-    );
-  });
-  // hash 导航不会重建模块缓存，直接改 hash 后 reload，模拟用户刷新进入
+  // 注入一组能覆盖三种状态的星标：接上主线 / 新方向 / 主线里程碑本身
+  const injectedStars = ['deepseek-v4-1-flash-usage-2026', 'google-gemini-1b-users-2026', 'gpt-5-2025'];
+  await stars.evaluate((list) => {
+    localStorage.setItem('aeg.stars.v1', JSON.stringify(list));
+  }, injectedStars);
   await stars.evaluate(() => {
     location.hash = '#/stars';
   });
   await stars.reload({ waitUntil: 'networkidle0', timeout: 20000 });
   await stars.waitForSelector('.stars-page', { timeout: 15000 });
-  await delays(500);
+  await stars.waitForSelector('.smn-svg', { timeout: 15000 });
+  await delays(700);
+
   const starsPage = await stars.evaluate(() => ({
-    entries: document.querySelectorAll('.stars-entry').length,
+    strips: document.querySelectorAll('.smn-strip').length,
+    mainlineNodes: document.querySelectorAll('.smn-mainline-node').length,
+    starredMainline: document.querySelectorAll('.smn-mainline-node.is-starred').length,
+    starNodes: document.querySelectorAll('.smn-star-node').length,
+    novelStars: document.querySelectorAll('.smn-star-node.is-novel').length,
+    novelTags: document.querySelectorAll('.smn-star-tag').length,
+    links: document.querySelectorAll('.smn-link').length,
+    provisionalLinks: document.querySelectorAll('.smn-link.is-provisional').length,
+    positions: document.querySelectorAll('.stars-position-card').length,
+    positionTexts: [...document.querySelectorAll('.stars-position-text')].map((node) => node.textContent?.trim() ?? ''),
+    positionAnchors: [...document.querySelectorAll('.stars-position-anchor')].map((node) => node.textContent?.trim() ?? ''),
     groups: document.querySelectorAll('.stars-group').length,
     groupTitles: [...document.querySelectorAll('.stars-group-title')].map((node) => node.textContent?.trim()),
-    clusterLabels: document.querySelectorAll('.stars-cluster-label').length,
-    aiChips: document.querySelectorAll('.stars-entry-ai').length,
-    nodes: document.querySelectorAll('.stars-node').length,
-    edges: document.querySelectorAll('.stars-edge').length,
-    relations: document.querySelectorAll('.stars-relation').length,
-    reasons: [...document.querySelectorAll('.stars-relation-reason')].map((node) => node.textContent?.trim().slice(0, 40)),
+    entries: document.querySelectorAll('.stars-entry').length,
+    relationTexts: [...document.querySelectorAll('.stars-entry-relation')].map((node) => node.textContent?.trim() ?? ''),
     stats: [...document.querySelectorAll('.stars-stats dd')].map((node) => node.textContent?.trim()),
+    aiLabels: document.querySelectorAll('.stars-ai-note, .stars-entry-ai, .stars-ai-badge').length,
+    mainlineLabels: [...document.querySelectorAll('.smn-mainline-label')].filter((node) => (node.textContent ?? '').trim().length > 0).length,
   }));
+
   check(
-    '「我的灵感」先自动分类（主题簇）再列星标',
-    starsPage.entries === 2 && starsPage.groups >= 1 && starsPage.groupTitles.length >= 1 && starsPage.nodes === 2,
-    JSON.stringify({ entries: starsPage.entries, groups: starsPage.groups, titles: starsPage.groupTitles }),
+    '星标叠加在既有的主线网络上（5 阶段 / 27 个里程碑）',
+    starsPage.strips === 5 && starsPage.mainlineNodes === 27 && starsPage.mainlineLabels === 27,
+    JSON.stringify({ strips: starsPage.strips, mainline: starsPage.mainlineNodes, labels: starsPage.mainlineLabels }),
   );
   check(
-    '自动分类随语义层生成（AI 主题 chip + 图上簇标签）',
-    starsPage.aiChips === 2 && starsPage.clusterLabels >= 1,
-    JSON.stringify({ aiChips: starsPage.aiChips, clusters: starsPage.clusterLabels }),
+    '接上主线的星标连到里程碑，未接上的单列为新方向',
+    starsPage.starNodes === 2 &&
+      starsPage.starredMainline === 1 &&
+      starsPage.links >= 2 &&
+      starsPage.novelStars === 1 &&
+      starsPage.novelTags === 1 &&
+      starsPage.provisionalLinks >= 1,
+    JSON.stringify({ stars: starsPage.starNodes, starredMainline: starsPage.starredMainline, links: starsPage.links, novel: starsPage.novelStars, provisional: starsPage.provisionalLinks }),
   );
   check(
-    '关联条目之间连线并写出「关联之处」',
-    starsPage.edges >= 1 && starsPage.relations >= 1 && starsPage.reasons.every((reason) => (reason ?? '').includes('关联之处')),
-    JSON.stringify({ edges: starsPage.edges, relations: starsPage.relations, reasons: starsPage.reasons }),
+    '网络方框下方给出每条星标的主线位置解读',
+    starsPage.positions === 3 &&
+      starsPage.positionTexts.length === 3 &&
+      starsPage.positionTexts.every((text) => text.length >= 10) &&
+      starsPage.positionAnchors.every((text) => text.length > 0),
+    JSON.stringify({ positions: starsPage.positions, texts: starsPage.positionTexts.map((text) => text.slice(0, 24)) }),
   );
+  check(
+    '位置解读不出现 AI 标注',
+    starsPage.aiLabels === 0 && starsPage.positionTexts.every((text) => !text.startsWith('AI')),
+    JSON.stringify({ aiLabels: starsPage.aiLabels }),
+  );
+  check(
+    '主题簇自动分类保留（每条标出关联之处）',
+    starsPage.groups >= 1 &&
+      starsPage.entries === 3 &&
+      starsPage.groupTitles.length >= 1 &&
+      starsPage.relationTexts.every((text) => text.includes('关联之处')),
+    JSON.stringify({ groups: starsPage.groups, entries: starsPage.entries, titles: starsPage.groupTitles }),
+  );
+
+  const animation = await stars.evaluate(() => {
+    const mainline = document.querySelector('.smn-mainline-node');
+    const star = document.querySelector('.smn-star-node');
+    const provisional = document.querySelector('.smn-link.is-provisional');
+    return {
+      mainlineTransition: mainline ? window.getComputedStyle(mainline).transitionDuration : '',
+      starTransition: star ? window.getComputedStyle(star).transitionDuration : '',
+      provisionalAnimation: provisional ? window.getComputedStyle(provisional).animationName : '',
+    };
+  });
+  check(
+    '主线随新方向微调带过渡动画',
+    parseFloat(animation.mainlineTransition) > 0 &&
+      parseFloat(animation.starTransition) > 0 &&
+      animation.provisionalAnimation.includes('smn-dash-flow'),
+    JSON.stringify(animation),
+  );
+
+  // 拖动星标：位置要变，主线节点不动，并出现「复位拖拽」
+  const starDot = await stars.$('.smn-star-node .smn-star-dot');
+  await starDot.scrollIntoView();
+  await delays(400);
+  const dotBox = await starDot.boundingBox();
+  const beforeTransform = await stars.$eval('.smn-star-node', (node) => node.getAttribute('style') ?? '');
+  await stars.mouse.move(dotBox.x + dotBox.width / 2, dotBox.y + dotBox.height / 2);
+  await stars.mouse.down();
+  await stars.mouse.move(dotBox.x + dotBox.width / 2 + 56, dotBox.y + dotBox.height / 2 + 18, { steps: 8 });
+  await stars.mouse.up();
+  await delays(400);
+  const dragState = await stars.evaluate(() => {
+    const node = document.querySelector('.smn-star-node');
+    return {
+      transform: node?.getAttribute('style') ?? '',
+      reset: !!document.querySelector('.smn-reset'),
+      drawer: !!document.querySelector('.drawer-panel'),
+    };
+  });
+  check(
+    '星标可拖动调整位置（带复位入口，不误开抽屉）',
+    dragState.transform !== beforeTransform && dragState.reset && !dragState.drawer,
+    JSON.stringify({ before: beforeTransform.slice(0, 40), after: dragState.transform.slice(0, 40), reset: dragState.reset }),
+  );
+
+  // 单击（不拖动）星标打开详情抽屉
+  const starDotAfter = await stars.$('.smn-star-node .smn-star-dot');
+  const dotBoxAfter = await starDotAfter.boundingBox();
+  await stars.mouse.click(dotBoxAfter.x + dotBoxAfter.width / 2, dotBoxAfter.y + dotBoxAfter.height / 2);
+  await delays(500);
+  const starDrawer = await stars.evaluate(() => ({
+    drawer: !!document.querySelector('.drawer-panel'),
+    hash: location.hash,
+  }));
+  check('点击星标打开详情抽屉', starDrawer.drawer && starDrawer.hash.includes('entry='), JSON.stringify(starDrawer));
+  await stars.keyboard.press('Escape');
+  await delays(300);
 
   // 刷新后仍保留
   await stars.reload({ waitUntil: 'networkidle0' });
-  await delays(400);
+  await delays(600);
   const persisted = await stars.$$eval('.stars-entry', (nodes) => nodes.length);
-  check('星标在本机浏览器持久保存（刷新后仍在）', persisted === 2, `${persisted} 张`);
-  await stars.screenshot({ path: path.join(OUT_DIR, 'stars-v1.png') });
+  const persistedNodes = await stars.$$eval('.smn-star-node', (nodes) => nodes.length);
+  check('星标在本机浏览器持久保存（刷新后仍在）', persisted === 3 && persistedNodes === 2, `${persisted} 条 / ${persistedNodes} 节点`);
+  await stars.screenshot({ path: path.join(OUT_DIR, 'stars-v3.png'), fullPage: true });
 
   // 取消星标
   await stars.click('.stars-entry .star-btn');
-  await delays(300);
+  await delays(400);
   const afterRemove = await stars.$$eval('.stars-entry', (nodes) => nodes.length);
-  check('取消星标后从列表移除', afterRemove === 1, `${afterRemove} 张`);
+  check('取消星标后从列表与网络移除', afterRemove === 2, `${afterRemove} 张`);
 
   // 抽屉里也能加星
-  await stars.goto(`${BASE}/#/feed?entry=gemini-4-carbon-2026`, { waitUntil: 'networkidle0' });
+  await stars.goto(`${BASE}/#/feed?entry=gpt-5-2025`, { waitUntil: 'networkidle0' });
   await delays(500);
   const drawerStar = await stars.evaluate(() => {
     const button = document.querySelector('.drawer-panel .star-btn');
@@ -755,6 +841,29 @@ try {
     drawerStar.exists && drawerStar.whiteSpace === 'nowrap' && drawerStar.height <= 36 && drawerStar.width >= 60,
     JSON.stringify(drawerStar),
   );
+
+  // 移动端：网络可横向滑动，页面本身不溢出
+  await stars.evaluate(() => {
+    location.hash = '#/stars';
+  });
+  await stars.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
+  await stars.reload({ waitUntil: 'networkidle0' });
+  await delays(600);
+  const mobileStars = await stars.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+    strips: document.querySelectorAll('.smn-strip').length,
+    scrollable: (() => {
+      const box = document.querySelector('.smn-scroll');
+      return box ? box.scrollWidth > box.clientWidth : false;
+    })(),
+  }));
+  check(
+    '移动端我的灵感页不横向溢出，网络内部可横滑',
+    mobileStars.scrollWidth <= mobileStars.innerWidth + 1 && mobileStars.strips === 5 && mobileStars.scrollable,
+    JSON.stringify(mobileStars),
+  );
+  await stars.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
 
   // 清理测试数据，避免污染用户本地
   await stars.evaluate(() => localStorage.removeItem('aeg.stars.v1'));

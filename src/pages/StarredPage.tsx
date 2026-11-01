@@ -1,22 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { JSX } from 'react';
 import { ImportanceBadge, TypeBadge } from '../components/common/Badges';
 import { StarButton } from '../components/common/StarButton';
 import { EmptyState } from '../components/common/EmptyState';
+import { StarMainlineNetwork } from '../components/stars/StarMainlineNetwork';
 import type { HashRoute } from '../hooks/useHashRoute';
-import { buildStarConnections, layoutStarGraph } from '../lib/connections';
-import { getAiLinkInfo, getSemanticEntryCount } from '../lib/semantic';
-import { ENTRIES, getEntryById } from '../lib/data';
+import { buildStarMainlineNetwork, type StarPlacement } from '../lib/mainline-network';
+import { getAiLinkInfo } from '../lib/semantic';
+import { ENTRIES } from '../lib/data';
 import { formatDate } from '../lib/format';
 import { useStars } from '../lib/stars';
 import type { Entry } from '../lib/types';
 import './starred.css';
-
-const GRAPH_WIDTH = 820;
-const GRAPH_HEIGHT = 420;
-const MAX_LABEL = 14;
-
-const TIER_LABEL = { strong: '强', medium: '中', weak: '弱' } as const;
 
 const THEME_COLORS = [
   '#60a5fa',
@@ -39,39 +34,34 @@ function hashColor(label: string): string {
   return THEME_COLORS[hash % THEME_COLORS.length];
 }
 
-function shortTitle(entry: Entry): string {
-  const chars = [...entry.title];
-  return chars.length > MAX_LABEL ? `${chars.slice(0, MAX_LABEL).join('')}…` : entry.title;
-}
-
 interface StarGroup {
   key: string;
   label: string;
   color: string;
   entries: Entry[];
-  /** 自动分类依据 */
   basis: string;
 }
 
-/** 我的灵感：星标 + 自动分类（AI 主题簇）+ 簇内/跨簇关联 */
+function shortAnchor(title: string): string {
+  const chars = [...title];
+  return chars.length > 10 ? `${chars.slice(0, 10).join('')}…` : title;
+}
+
+/** 我的灵感：星标挂到主线网络上 + 位置解读 + 主题簇归纳 */
 export function StarredPage({ route }: { route: HashRoute }): JSX.Element {
   const { ids } = useStars();
-  const [hovered, setHovered] = useState<string | null>(null);
 
-  const starredEntries = useMemo(
-    () => ids.map((id) => getEntryById(id)).filter((entry): entry is Entry => entry !== undefined),
-    [ids],
-  );
+  const network = useMemo(() => buildStarMainlineNetwork(ENTRIES, ids), [ids]);
+  const placementById = useMemo(() => {
+    const map = new Map<string, StarPlacement>();
+    for (const star of network.stars) map.set(star.entry.id, star);
+    return map;
+  }, [network.stars]);
 
-  const connections = useMemo(() => buildStarConnections(ENTRIES, ids), [ids]);
-  const positions = useMemo(
-    () => layoutStarGraph(ids, connections.edges, GRAPH_WIDTH, GRAPH_HEIGHT),
-    [ids, connections.edges],
-  );
-  const byId = useMemo(() => new Map(starredEntries.map((entry) => [entry.id, entry])), [starredEntries]);
+  const starredEntries = useMemo(() => network.stars.map((star) => star.entry), [network.stars]);
 
-  // 先分类：以 AI 主主题为基础形成簇（≥2 条才成簇），其余条目按次主题并入已有簇，
-  // 仍无法归入的进「其他线索」。分类随星标增减动态调整，不预设固定类别。
+  // 分类：以主题为基础形成簇（≥2 条才成簇），其余按次主题并入，仍无归属的进「其他线索」。
+  // 分类随星标增减自动调整，不预设固定类别。
   const groups = useMemo<StarGroup[]>(() => {
     const primaryCount = new Map<string, number>();
     for (const entry of starredEntries) {
@@ -103,7 +93,7 @@ export function StarredPage({ route }: { route: HashRoute }): JSX.Element {
       label: theme,
       color: hashColor(theme),
       entries: list.sort((a, b) => b.date.localeCompare(a.date)),
-      basis: 'AI 主题',
+      basis: '主题归纳',
     }));
     if (singles.length > 0) {
       result.push({
@@ -123,253 +113,156 @@ export function StarredPage({ route }: { route: HashRoute }): JSX.Element {
     return result;
   }, [starredEntries]);
 
-  const entryGroup = useMemo(() => {
-    const map = new Map<string, StarGroup>();
-    for (const group of groups) for (const entry of group.entries) map.set(entry.id, group);
-    return map;
-  }, [groups]);
-
-  const groupCenters = useMemo(() => {
-    const centers = new Map<string, { x: number; y: number; count: number }>();
-    for (const group of groups) {
-      let sumX = 0;
-      let minY = Number.POSITIVE_INFINITY;
-      let count = 0;
-      for (const entry of group.entries) {
-        const point = positions.get(entry.id);
-        if (!point) continue;
-        sumX += point.x;
-        minY = Math.min(minY, point.y);
-        count += 1;
-      }
-      if (count > 0) centers.set(group.label, { x: sumX / count, y: Math.max(18, minY - 10), count });
-    }
-    return centers;
-  }, [groups, positions]);
-
-  const intraEdges = useMemo(
-    () => connections.edges.filter((edge) => entryGroup.get(edge.a) === entryGroup.get(edge.b)),
-    [connections.edges, entryGroup],
-  );
-  const crossEdges = useMemo(
-    () => connections.edges.filter((edge) => entryGroup.get(edge.a) !== entryGroup.get(edge.b)).slice(0, 6),
-    [connections.edges, entryGroup],
-  );
-
   const openEntry = (entry: Entry) => {
     route.setParams((params) => params.set('entry', entry.id));
   };
 
-  const hasStars = starredEntries.length > 0;
-  const highlighted = hovered
-    ? new Set(connections.edges.filter((edge) => edge.a === hovered || edge.b === hovered).flatMap((edge) => [edge.a, edge.b]))
-    : null;
+  const selectedId = route.params.get('entry');
+  const hasStars = network.stars.length > 0;
 
-  const groupOf = (id: string): StarGroup | undefined => entryGroup.get(id);
+  const anchorSummary = (star: StarPlacement): string => {
+    if (star.isMainlineMilestone) return '本身是主线里程碑';
+    if (star.novel) return '新方向 · 尚未接上主线';
+    return `接上：${star.anchors.map((anchor) => shortAnchor(anchor.title)).join(' · ')}`;
+  };
+
+  const relationSummary = (star: StarPlacement): string => {
+    const anchor = star.anchors[0];
+    if (anchor && anchor.reasons.length > 0) return anchor.reasons[0];
+    if (star.isMainlineMilestone) return '这条记录就是主线的一部分。';
+    return star.position;
+  };
 
   return (
-    <div className="stars-page">
+    <div
+      className="stars-page"
+      data-stars={network.stats.stars}
+      data-ai-positions={network.stars.filter((star) => star.positionSource === 'ai').length}
+    >
       <header className="stars-hero">
         <p className="stars-kicker mono">MY INSPIRATION · 只属于你</p>
         <h1>我的灵感</h1>
         <p className="stars-sub">
-          点 ☆ 把「对我有启发」的内容收进来，只存在你本机。系统会先按 AI 主题自动归成几个簇（随新星标动态变化），再在相关的条目之间连线，并写出「关联之处」。
+          点 ☆ 把「对我有启发」的内容收进来，只存在你本机。每条星标会先挂到 AI 演进主线的 27
+          个里程碑上：接得上的连出关系，接不上的作为「新方向」单列。星标节点可以拖动。
         </p>
         <dl className="stars-stats">
           <div>
             <dt>星标</dt>
-            <dd className="mono">{starredEntries.length}</dd>
+            <dd className="mono">{network.stats.stars}</dd>
           </div>
           <div>
             <dt>自动分类</dt>
             <dd className="mono">{groups.length}</dd>
           </div>
           <div>
-            <dt>自动联系</dt>
-            <dd className="mono">{connections.edges.length}</dd>
+            <dt>接上主线</dt>
+            <dd className="mono">{network.stats.connected}</dd>
           </div>
           <div>
-            <dt>强联系</dt>
-            <dd className="mono">{connections.edges.filter((edge) => edge.tier === 'strong').length}</dd>
+            <dt>新方向</dt>
+            <dd className="mono">{network.stats.novel}</dd>
           </div>
         </dl>
       </header>
 
       {hasStars ? (
         <>
-          <section className="stars-graph-card" aria-labelledby="stars-graph-title">
+          <section className="stars-network-card" aria-labelledby="stars-network-title">
             <div className="stars-section-head">
-              <h2 id="stars-graph-title">灵感网络</h2>
+              <h2 id="stars-network-title">主线网络</h2>
               <span className="stars-section-note">
-                颜色 = 自动分类；实线 = 规则关联，金色虚线 = AI 语义也认为相关；粗/细 = 强/弱
+                主线 {network.stats.mainline} 个里程碑随阶段排列；金色星标挂到接得上的节点，虚线是尚未接上的新方向
               </span>
             </div>
-            <svg
-              className="stars-graph"
-              viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`}
-              role="img"
-              aria-label={`灵感网络：${starredEntries.length} 个节点、${groups.length} 个自动分类、${connections.edges.length} 条联系`}
-            >
-              <g className="stars-edges">
-                {connections.edges.map((edge) => {
-                  const from = positions.get(edge.a);
-                  const to = positions.get(edge.b);
-                  if (!from || !to) return null;
-                  const dim = highlighted && !(highlighted.has(edge.a) && highlighted.has(edge.b));
-                  return (
-                    <line
-                      key={`${edge.a}-${edge.b}`}
-                      x1={from.x}
-                      y1={from.y}
-                      x2={to.x}
-                      y2={to.y}
-                      className={`stars-edge tier-${edge.tier}${edge.ai ? ' is-ai' : ''}${dim ? ' is-dim' : ''}`}
-                      strokeWidth={edge.tier === 'strong' ? 2.6 : edge.tier === 'medium' ? 1.6 : 1}
-                      opacity={dim ? 0.1 : edge.tier === 'weak' ? 0.35 : 0.6}
-                    >
-                      <title>{`${TIER_LABEL[edge.tier]}联系 · ${edge.score.toFixed(0)} 分\n${edge.reasons.join('；')}`}</title>
-                    </line>
-                  );
-                })}
-              </g>
-              <g className="stars-nodes">
-                {starredEntries.map((entry) => {
-                  const point = positions.get(entry.id);
-                  if (!point) return null;
-                  const radius = 7 + entry.importance * 1.1;
-                  const isHover = hovered === entry.id;
-                  const dim = highlighted !== null && !highlighted.has(entry.id);
-                  const group = groupOf(entry.id);
-                  return (
-                    <g
-                      key={entry.id}
-                      className={`stars-node${isHover ? ' is-hover' : ''}${dim ? ' is-dim' : ''}`}
-                      transform={`translate(${point.x}, ${point.y})`}
-                      onMouseEnter={() => setHovered(entry.id)}
-                      onMouseLeave={() => setHovered(null)}
-                      onClick={() => openEntry(entry)}
-                      tabIndex={0}
-                      role="button"
-                      aria-label={`${entry.title}（${entry.date}）`}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          openEntry(entry);
-                        }
-                      }}
-                    >
-                      <circle r={radius} fill={group?.color ?? '#94a3b8'} />
-                      <circle r={radius + 4} className="stars-node-ring" />
-                      <text y={radius + 15} className="stars-node-label">
-                        {shortTitle(entry)}
-                      </text>
-                      <title>{`${entry.title}\n${entry.summary}`}</title>
-                    </g>
-                  );
-                })}
-              </g>
-              <g className="stars-clusters">
-                {[...groupCenters.entries()].map(([label, center]) => (
-                  <g key={label} transform={`translate(${center.x}, ${center.y})`} className="stars-cluster-label">
-                    <rect x={-((label.length * 6.5) + 10)} y={-12} width={label.length * 13 + 20} height={20} rx={10} />
-                    <text y={2.5}>{label}</text>
-                  </g>
-                ))}
-              </g>
-            </svg>
-            <p className={`stars-ai-note${connections.aiEnabled ? ' is-on' : ''}`}>
-              {connections.aiEnabled
-                ? `AI 语义层已启用（已为 ${getSemanticEntryCount()} 条生成主题/关键词）：分类与金色虚线都来自语义层，悬停/列表可看到理由。`
-                : 'AI 语义层未启用：在 GitHub 仓库添加 ZHIPU_API_KEY secret 后重新部署，即可用免费 GLM-4.7-Flash 辅助分类与关联；当前显示规则联系。'}
-            </p>
+            <StarMainlineNetwork
+              network={network}
+              selectedId={selectedId}
+              onSelect={(entryId) => route.setParams((params) => params.set('entry', entryId))}
+            />
+          </section>
+
+          <section className="stars-positions" aria-labelledby="stars-positions-title">
+            <div className="stars-section-head">
+              <h2 id="stars-positions-title">星标在主线中的位置</h2>
+              <span className="stars-section-note">每一条接在哪、为什么值得关注</span>
+            </div>
+            <ul className="stars-position-list">
+              {network.stars.map((star) => (
+                <li className={`stars-position-card${star.novel ? ' is-novel' : ''}`} key={star.entry.id}>
+                  <div className="stars-position-top">
+                    <button type="button" className="stars-position-title" onClick={() => openEntry(star.entry)}>
+                      {star.entry.title}
+                    </button>
+                    <span className="stars-position-chapter">
+                      第 {star.chapterIndex + 1} 章 · {star.chapterTitle}
+                    </span>
+                  </div>
+                  <p className="stars-position-text">{star.position}</p>
+                  <div className="stars-position-foot">
+                    <span className="stars-position-date mono">{formatDate(star.entry.date)}</span>
+                    <span className={`stars-position-anchor${star.novel ? ' is-novel' : ''}`}>
+                      {anchorSummary(star)}
+                    </span>
+                    <StarButton entryId={star.entry.id} />
+                  </div>
+                </li>
+              ))}
+            </ul>
           </section>
 
           <section className="stars-section" aria-labelledby="stars-groups-title">
             <div className="stars-section-head">
               <h2 id="stars-groups-title">主题簇 · 自动分类</h2>
-              <span className="stars-section-note">按 AI 主题归纳，随星标变化自动调整；单条暂归「其他线索」</span>
+              <span className="stars-section-note">按主题动态归纳，随星标变化自动调整；单条暂归「其他线索」</span>
             </div>
             <div className="stars-groups">
-              {groups.map((group) => {
-                const edges = intraEdges.filter((edge) => entryGroup.get(edge.a) === group);
-                return (
-                  <div className="stars-group" key={group.key}>
-                    <header className="stars-group-head">
-                      <span className="stars-group-dot" style={{ background: group.color }} aria-hidden="true" />
-                      <h3 className="stars-group-title">{group.label}</h3>
-                      <span className="stars-group-count mono">{group.entries.length} 条</span>
-                      <span className="stars-group-basis">{group.basis}</span>
-                    </header>
-                    <ul className="stars-entries">
-                      {group.entries.map((entry) => {
-                        const info = getAiLinkInfo(entry.id);
-                        return (
-                          <li key={entry.id} className="stars-entry">
-                            <button type="button" className="stars-entry-main" onClick={() => openEntry(entry)}>
-                              <span className="stars-entry-date mono">{formatDate(entry.date)}</span>
-                              <TypeBadge type={entry.type} />
-                              <ImportanceBadge value={entry.importance} />
-                              <span className="stars-entry-title">{entry.title}</span>
-                              {info && (
-                                <span className="stars-entry-ai" title={(info.keywords ?? []).join('、')}>
-                                  AI · {(info.themes ?? []).join(' / ')}
-                                  {(info.keywords ?? []).length > 0 ? ` · ${(info.keywords ?? []).slice(0, 3).join('、')}` : ''}
-                                </span>
-                              )}
-                            </button>
-                            <StarButton entryId={entry.id} />
-                          </li>
-                        );
-                      })}
-                    </ul>
-                    {edges.length > 0 && (
-                      <ul className="stars-relations">
-                        {edges.map((edge) => (
-                          <li key={`${edge.a}-${edge.b}`} className="stars-relation">
-                            <span className={`stars-tier is-${edge.tier}`}>{TIER_LABEL[edge.tier]}</span>
-                            {edge.ai && <span className="stars-ai-badge">AI</span>}
-                            <span className="stars-relation-pair">
-                              {byId.get(edge.a)?.title ?? edge.a} ↔ {byId.get(edge.b)?.title ?? edge.b}
-                            </span>
-                            <span className="stars-relation-reason">
-                              关联之处：{edge.reasons.length > 0 ? edge.reasons.join('；') : '综合相关'}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                );
-              })}
+              {groups.map((group) => (
+                <div className="stars-group" key={group.key}>
+                  <header className="stars-group-head">
+                    <span className="stars-group-dot" style={{ background: group.color }} aria-hidden="true" />
+                    <h3 className="stars-group-title">{group.label}</h3>
+                    <span className="stars-group-count mono">{group.entries.length} 条</span>
+                    <span className="stars-group-basis">{group.basis}</span>
+                  </header>
+                  <ul className="stars-entries">
+                    {group.entries.map((entry) => {
+                      const star = placementById.get(entry.id);
+                      return (
+                        <li key={entry.id} className="stars-entry">
+                          <button type="button" className="stars-entry-main" onClick={() => openEntry(entry)}>
+                            <span className="stars-entry-date mono">{formatDate(entry.date)}</span>
+                            <TypeBadge type={entry.type} />
+                            <ImportanceBadge value={entry.importance} />
+                            <span className="stars-entry-title">{entry.title}</span>
+                          </button>
+                          <StarButton entryId={entry.id} />
+                          {star && (
+                            <p className="stars-entry-relation">
+                              <span className={`stars-entry-anchor${star.novel ? ' is-novel' : ''}`}>
+                                {star.isMainlineMilestone
+                                  ? '主线里程碑'
+                                  : star.novel
+                                    ? '新方向'
+                                    : `主线 · ${star.anchors.map((anchor) => shortAnchor(anchor.title)).join(' / ')}`}
+                              </span>
+                              <span className="stars-entry-reason">关联之处：{relationSummary(star)}</span>
+                            </p>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
             </div>
           </section>
-
-          {crossEdges.length > 0 && (
-            <section className="stars-section" aria-labelledby="stars-cross-title">
-              <div className="stars-section-head">
-                <h2 id="stars-cross-title">跨簇联系</h2>
-                <span className="stars-section-note">不同分类之间的隐藏关联</span>
-              </div>
-              <ul className="stars-relations">
-                {crossEdges.map((edge) => (
-                  <li key={`${edge.a}-${edge.b}`} className="stars-relation">
-                    <span className={`stars-tier is-${edge.tier}`}>{TIER_LABEL[edge.tier]}</span>
-                    {edge.ai && <span className="stars-ai-badge">AI</span>}
-                    <span className="stars-relation-pair">
-                      {byId.get(edge.a)?.title ?? edge.a} ↔ {byId.get(edge.b)?.title ?? edge.b}
-                    </span>
-                    <span className="stars-relation-reason">关联之处：{edge.reasons.join('；')}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
         </>
       ) : (
         <div className="stars-empty">
           <EmptyState
             title="还没有星标"
-            description="去「最新动态」或任意条目详情页，点 ☆ 收藏对你有启发的内容；收藏会保存在本机，并自动分类、生成灵感网络。"
+            description="去「最新动态」或任意条目详情页，点 ☆ 收藏对你有启发的内容；收藏会保存在本机，并自动挂到主线上、生成位置解读。"
           />
           <a className="stars-empty-cta" href="#/feed">
             去最新动态找灵感 →

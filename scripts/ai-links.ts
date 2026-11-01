@@ -1,16 +1,18 @@
 /**
  * 构建期 AI 语义层（可选）：用智谱 GLM-4.7-Flash（免费）为每个条目提取
- * 主题 / 核心思想 / 关键词，写入 src/generated/ai-links.json。
+ * 主题 / 核心思想 / 关键词，并为最近条目生成「在主线中的位置」与关联里程碑 id，
+ * 写入 src/data/ai-links.json（供「我的灵感」分类、主线锚点与位置解读使用）。
  *
  * 用法：
  *   ZHIPU_API_KEY=xxx npm run ai:links
  *
- * 未配置 key 时自动跳过（不影响构建）；API 失败时保留已完成部分并正常退出。
+ * 未配置 key 时自动跳过（不影响构建）；API 失败 / 超时保留已完成部分并正常退出。
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { loadEntries, ROOT } from './lib/load-entries';
 import type { Entry } from '../src/lib/types';
+import { MAINLINE_CHAPTERS } from '../src/lib/mainline';
 
 const ENDPOINT = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
 const MODEL = process.env.AI_MODEL ?? 'glm-4.7-flash';
@@ -19,6 +21,10 @@ const CONCURRENCY = 2;
 const MAX_RETRIES = 1;
 /** 整体时间预算：免费 API 慢/限流时不拖垮 CI，超出后保留已生成部分 */
 const TIME_BUDGET_MS = 5 * 60 * 1000;
+/** 位置解读只补最近一批条目，避免每次部署都把全部 211 条重跑一遍 */
+const POSITION_RECENT_DATE = '2026-09-01';
+const POSITION_BUDGET_MS = 3 * 60 * 1000;
+const POSITION_BATCH_SIZE = 6;
 
 /** 受控主题词表：强制模型复用同一套主题，避免每条内容自创主题导致无法匹配 */
 export const CANONICAL_THEMES = [
@@ -48,6 +54,10 @@ interface AiEntryLink {
   core: string;
   themes: string[];
   keywords: string[];
+  /** 在主线中的位置（构建期生成；可缺省，前端会用规则组合兜底） */
+  position?: string;
+  /** 语义上最相关的主线里程碑 id */
+  mainline?: string[];
 }
 
 type AiLinkMap = Record<string, AiEntryLink>;
@@ -67,6 +77,99 @@ const SYSTEM_PROMPT = `你是 AI 技术史编辑。用户会给一批 AI 条目�
 - themes：2-4 个跨条目的抽象主题（如：推理时计算、全双工交互、国产算力、Agent 长期记忆、模型开源、评测与安全）——用简短中文名词
 - keywords：4-6 个可与其他条目产生关联的关键词（公司/模型/方法/问题，尽量具体）
 只输出 JSON：{"items":[{"id":"...","core":"...","themes":["..."],"keywords":["..."]}]}，不要解释。`;
+
+function formatMainlineContext(entries: Entry[]): string {
+  const byId = new Map(entries.map((entry) => [entry.id, entry]));
+  const lines: string[] = [];
+  for (let index = 0; index < MAINLINE_CHAPTERS.length; index += 1) {
+    const chapter = MAINLINE_CHAPTERS[index];
+    lines.push(`【第 ${index + 1} 章 · ${chapter.title}】${chapter.dateStart.slice(0, 4)}–${chapter.dateEnd.slice(0, 4)}`);
+    for (const entry of entries) {
+      if (!byId.has(entry.id)) continue;
+      if (entry.date < chapter.dateStart || entry.date > chapter.dateEnd) continue;
+      lines.push(`- ${entry.id} | ${entry.date} | ${entry.title}`);
+    }
+  }
+  return lines.join('\n');
+}
+
+function buildPositionPrompt(mainlineContext: string): string {
+  return `你是 AI 技术史编辑，熟悉 2012–2026 年 AI 演进主线。下面是站内主线里程碑（分阶段）：
+
+${mainlineContext}
+
+任务：对用户给出的每条内容，判断它在主线中的位置：
+- position：一句话（≤50 字），说明它接在哪个主线里程碑之后、属于哪个阶段，是延续、补充还是突破；尽量点出一个里程碑标题，不要空泛。
+- mainlineIds：1–2 个最相关的主线里程碑 id，必须从上面列表里选；如果确实属于主线之外的新方向，给空数组 []。
+只输出 JSON：{"items":[{"id":"...","position":"...","mainlineIds":["..."]}]}，不要解释。`;
+}
+
+function compressPositionEntry(entry: Entry): Record<string, unknown> {
+  return {
+    id: entry.id,
+    title: entry.title,
+    date: entry.date,
+    type: entry.type,
+    categories: entry.categories,
+    tags: entry.tags,
+    summary: entry.summary.slice(0, 200),
+    significance: entry.significance.slice(0, 160),
+  };
+}
+
+async function callPositionModel(
+  apiKey: string,
+  batch: Entry[],
+  systemPrompt: string,
+  validMainlineIds: Set<string>,
+): Promise<Record<string, { position: string; mainline: string[] }>> {
+  const body = {
+    model: MODEL,
+    temperature: 0.2,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: JSON.stringify({ items: batch.map(compressPositionEntry) }) },
+    ],
+  };
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 45_000);
+  try {
+    const response = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`HTTP ${response.status}: ${text.slice(0, 200)}`);
+    }
+    const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const content = payload.choices?.[0]?.message?.content ?? '';
+    const parsed = extractJson(content) as { items?: unknown } | null;
+    const items = Array.isArray(parsed?.items) ? parsed.items : [];
+    const result: Record<string, { position: string; mainline: string[] }> = {};
+    for (const item of items) {
+      if (!item || typeof item !== 'object') continue;
+      const record = item as Record<string, unknown>;
+      const id = typeof record.id === 'string' ? record.id : '';
+      if (!id) continue;
+      const position = typeof record.position === 'string' ? record.position.trim().slice(0, 90) : '';
+      const mainline = Array.isArray(record.mainlineIds)
+        ? [...new Set(record.mainlineIds.filter((value): value is string => typeof value === 'string'))]
+            .filter((value) => validMainlineIds.has(value))
+            .slice(0, 2)
+        : [];
+      if (position) result[id] = { position, mainline };
+    }
+    return result;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function compressEntry(entry: Entry): Record<string, unknown> {
   return {
@@ -291,6 +394,61 @@ async function main(): Promise<void> {
     bootstrapped += 1;
   }
   if (bootstrapped > 0) console.log(`· 规则回退补齐 ${bootstrapped} 条`);
+
+  // 位置解读：只补最近活跃条目（用户最可能加星的一批），避免每次部署重跑全部数据
+  const mainlineEntries = entries
+    .filter((entry) => entry.mainline && entry.date >= '2012-01-01')
+    .sort((left, right) => left.date.localeCompare(right.date));
+  const validMainlineIds = new Set(mainlineEntries.map((entry) => entry.id));
+  const positionTargets = entries.filter((entry) => {
+    if (entry.mainline) return false;
+    if (result[entry.id]?.position) return false;
+    if (entry.date >= POSITION_RECENT_DATE) return true;
+    return (entry.added_at ?? '') >= POSITION_RECENT_DATE;
+  });
+  if (positionTargets.length > 0) {
+    const prompt = buildPositionPrompt(formatMainlineContext(mainlineEntries));
+    const positionDeadline = Date.now() + POSITION_BUDGET_MS;
+    console.log(`· 主线位置解读：${positionTargets.length} 条待生成`);
+    let positionDone = 0;
+    let positionFailed = 0;
+    const positionBatches: Entry[][] = [];
+    for (let offset = 0; offset < positionTargets.length; offset += POSITION_BATCH_SIZE) {
+      positionBatches.push(positionTargets.slice(offset, offset + POSITION_BATCH_SIZE));
+    }
+    const runPositionBatch = async (batch: Entry[], attempt: number): Promise<void> => {
+      try {
+        const links = await callPositionModel(apiKey, batch, prompt, validMainlineIds);
+        for (const [id, value] of Object.entries(links)) {
+          result[id] = { ...(result[id] ?? { core: '', themes: ['其他'], keywords: [] }), ...value };
+        }
+        positionDone += Object.keys(links).length;
+        fs.writeFileSync(OUTPUT, `${JSON.stringify(result)}\n`);
+        console.log(`  ✓ 位置 ${positionDone}/${positionTargets.length}`);
+      } catch (error) {
+        if (attempt < MAX_RETRIES) {
+          await new Promise((resolve) => setTimeout(resolve, 1200 * (attempt + 1)));
+          return runPositionBatch(batch, attempt + 1);
+        }
+        positionFailed += 1;
+        console.warn(`  ⚠ 位置批次失败（${batch.map((entry) => entry.id).join(',')}）：${(error as Error).message}`);
+      }
+    };
+    let positionCursor = 0;
+    const positionWorkers = Array.from({ length: Math.min(2, positionBatches.length) }, async () => {
+      while (positionCursor < positionBatches.length) {
+        if (Date.now() > positionDeadline) return;
+        const index = positionCursor;
+        positionCursor += 1;
+        await runPositionBatch(positionBatches[index], 1);
+        await new Promise((resolve) => setTimeout(resolve, 400));
+      }
+    });
+    await Promise.all(positionWorkers);
+    const targetIds = new Set(positionTargets.map((entry) => entry.id));
+    const generated = entries.filter((entry) => targetIds.has(entry.id) && result[entry.id]?.position).length;
+    console.log(`✓ 主线位置解读完成：${generated}/${positionTargets.length} 条，失败批次 ${positionFailed}`);
+  }
 
   fs.writeFileSync(OUTPUT, `${JSON.stringify(result)}\n`);
   const coverage = entries.filter((entry) => result[entry.id]).length;

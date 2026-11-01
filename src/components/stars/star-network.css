@@ -1,0 +1,366 @@
+/* 我的灵感 v3：主线网络（主线里程碑 + 可拖动星标） */
+.smn-root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.smn-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.smn-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #97a6bf;
+  font-size: 12px;
+}
+
+.smn-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.smn-legend-mainline {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #60a5fa;
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.35);
+}
+
+.smn-legend-star {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f5c542;
+  color: #1a1f2b;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.smn-legend-novel {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px dashed #f5c542;
+  color: #f5c542;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.smn-legend-hint {
+  color: #6f7f9b;
+}
+
+.smn-reset {
+  border: 1px solid rgba(120, 140, 180, 0.32);
+  background: rgba(18, 24, 36, 0.7);
+  color: #c9d4e6;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.smn-reset:hover {
+  border-color: rgba(245, 197, 66, 0.6);
+  color: #f5c542;
+}
+
+.smn-scroll {
+  overflow-x: auto;
+  border-radius: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.smn-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 720px;
+  font-family: inherit;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(96, 165, 250, 0.06), transparent 42%),
+    radial-gradient(circle at 82% 92%, rgba(245, 197, 66, 0.05), transparent 46%),
+    #0b0e14;
+}
+
+.smn-strip-bg {
+  fill: rgba(16, 22, 34, 0.72);
+  stroke: rgba(120, 145, 185, 0.14);
+  stroke-width: 1;
+}
+
+.smn-strip.is-even .smn-strip-bg {
+  fill: rgba(20, 27, 41, 0.58);
+}
+
+.smn-strip-index {
+  fill: #4c5c78;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.smn-strip-title {
+  fill: #dbe4f2;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.smn-strip-range {
+  fill: #6d7f9c;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+}
+
+.smn-strip-count {
+  fill: #7f90aa;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9.5px;
+}
+
+.smn-spine {
+  stroke: rgba(120, 145, 185, 0.32);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 4;
+}
+
+/* 主线节点 */
+.smn-mainline-node {
+  cursor: pointer;
+  transition:
+    transform 0.65s cubic-bezier(0.2, 0.7, 0.2, 1),
+    opacity 0.25s ease;
+}
+
+.smn-mainline-dot {
+  stroke: rgba(8, 10, 16, 0.7);
+  stroke-width: 1.5;
+  transition: stroke 0.2s ease;
+}
+
+.smn-mainline-label {
+  fill: #8fa1bd;
+  font-size: 9.5px;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.smn-mainline-node.is-starred .smn-mainline-label {
+  fill: #f3d47d;
+}
+
+.smn-mainline-star-ring {
+  fill: none;
+  stroke: #f5c542;
+  stroke-width: 1.4;
+  stroke-dasharray: 3 3;
+  opacity: 0.85;
+  animation: smn-ring-pulse 3.4s ease-in-out infinite;
+}
+
+.smn-mainline-star-glyph {
+  fill: #f5c542;
+  font-size: 10px;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.smn-mainline-node:hover .smn-mainline-dot,
+.smn-mainline-node.is-selected .smn-mainline-dot {
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+.smn-mainline-node.is-dim {
+  opacity: 0.32;
+}
+
+/* 为新方向轻微让位的主线节点：描边变暖，配合位置过渡动画 */
+.smn-mainline-node.is-nudged .smn-mainline-dot {
+  stroke: rgba(245, 197, 66, 0.55);
+}
+
+.smn-mainline-link {
+  fill: none;
+  stroke: rgba(120, 150, 200, 0.26);
+  stroke-width: 1.1;
+}
+
+/* 星标 → 主线连线 */
+.smn-link {
+  fill: none;
+  stroke-linecap: round;
+  transition: opacity 0.2s ease;
+}
+
+.smn-link.is-strong {
+  stroke: rgba(245, 197, 66, 0.82);
+  stroke-width: 2.1;
+}
+
+.smn-link.is-medium {
+  stroke: rgba(245, 197, 66, 0.52);
+  stroke-width: 1.5;
+}
+
+.smn-link.is-weak {
+  stroke: rgba(150, 168, 196, 0.36);
+  stroke-width: 1.1;
+}
+
+.smn-link.is-provisional {
+  stroke-dasharray: 3 4;
+  animation: smn-dash-flow 9s linear infinite;
+}
+
+.smn-link.is-active {
+  stroke: #f5c542;
+  stroke-width: 2.6;
+  opacity: 1;
+}
+
+.smn-link.is-dim {
+  opacity: 0.08;
+}
+
+/* 星标节点 */
+.smn-star-node {
+  cursor: grab;
+  touch-action: none;
+  transition:
+    transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1),
+    opacity 0.25s ease;
+  animation: smn-star-in 0.4s ease-out;
+}
+
+.smn-star-node.is-dragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+.smn-star-hit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.smn-star-dot {
+  fill: #f5c542;
+  stroke: #10141d;
+  stroke-width: 2;
+  filter: drop-shadow(0 0 7px rgba(245, 197, 66, 0.38));
+}
+
+.smn-star-glyph {
+  fill: #1a1f2b;
+  font-size: 15px;
+  font-weight: 700;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.smn-star-label {
+  fill: #e8edf7;
+  font-size: 10px;
+  text-anchor: middle;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: rgba(10, 13, 20, 0.92);
+  stroke-width: 2.6px;
+}
+
+.smn-star-node.is-novel .smn-star-dot {
+  fill: rgba(245, 197, 66, 0.12);
+  stroke: #f5c542;
+  stroke-width: 1.6;
+  filter: none;
+}
+
+.smn-star-node.is-novel .smn-star-glyph {
+  fill: #f5c542;
+  font-size: 12px;
+}
+
+.smn-star-node.is-novel .smn-star-label {
+  fill: #d8c690;
+}
+
+.smn-star-ring {
+  fill: none;
+  stroke: #f5c542;
+  stroke-width: 1.3;
+  stroke-dasharray: 3 4;
+  opacity: 0.8;
+  animation: smn-dash-flow 12s linear infinite;
+}
+
+.smn-star-tag {
+  fill: #d8c690;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-anchor: start;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: rgba(10, 13, 20, 0.92);
+  stroke-width: 2.4px;
+}
+
+.smn-star-node.is-hover .smn-star-dot {
+  stroke: #ffffff;
+}
+
+.smn-star-node.is-dim {
+  opacity: 0.25;
+}
+
+@keyframes smn-star-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes smn-dash-flow {
+  to {
+    stroke-dashoffset: -60;
+  }
+}
+
+@keyframes smn-ring-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 900px) {
+  .smn-svg {
+    min-width: 760px;
+  }
+
+  .smn-legend {
+    font-size: 11px;
+  }
+}
