@@ -696,44 +696,65 @@ try {
   await stars.waitForSelector('.stars-page', { timeout: 15000 });
   await delays(500);
   const starsPage = await stars.evaluate(() => ({
-    cards: document.querySelectorAll('.stars-card').length,
+    entries: document.querySelectorAll('.stars-entry').length,
+    groups: document.querySelectorAll('.stars-group').length,
+    groupTitles: [...document.querySelectorAll('.stars-group-title')].map((node) => node.textContent?.trim()),
+    clusterLabels: document.querySelectorAll('.stars-cluster-label').length,
+    aiChips: document.querySelectorAll('.stars-entry-ai').length,
     nodes: document.querySelectorAll('.stars-node').length,
     edges: document.querySelectorAll('.stars-edge').length,
-    links: document.querySelectorAll('.stars-link').length,
+    relations: document.querySelectorAll('.stars-relation').length,
+    reasons: [...document.querySelectorAll('.stars-relation-reason')].map((node) => node.textContent?.trim().slice(0, 40)),
     stats: [...document.querySelectorAll('.stars-stats dd')].map((node) => node.textContent?.trim()),
   }));
   check(
-    '「我的灵感」展示星标与统计',
-    starsPage.cards === 2 && starsPage.nodes === 2 && starsPage.links >= 1,
-    JSON.stringify(starsPage),
+    '「我的灵感」先自动分类（主题簇）再列星标',
+    starsPage.entries === 2 && starsPage.groups >= 1 && starsPage.groupTitles.length >= 1 && starsPage.nodes === 2,
+    JSON.stringify({ entries: starsPage.entries, groups: starsPage.groups, titles: starsPage.groupTitles }),
   );
   check(
-    '星标之间自动产生联系（连线 + 理由）',
-    starsPage.edges >= 1 && starsPage.stats[1] !== '0',
-    JSON.stringify({ edges: starsPage.edges, stats: starsPage.stats }),
+    '自动分类随语义层生成（AI 主题 chip + 图上簇标签）',
+    starsPage.aiChips === 2 && starsPage.clusterLabels >= 1,
+    JSON.stringify({ aiChips: starsPage.aiChips, clusters: starsPage.clusterLabels }),
+  );
+  check(
+    '关联条目之间连线并写出「关联之处」',
+    starsPage.edges >= 1 && starsPage.relations >= 1 && starsPage.reasons.every((reason) => (reason ?? '').includes('关联之处')),
+    JSON.stringify({ edges: starsPage.edges, relations: starsPage.relations, reasons: starsPage.reasons }),
   );
 
   // 刷新后仍保留
   await stars.reload({ waitUntil: 'networkidle0' });
   await delays(400);
-  const persisted = await stars.$$eval('.stars-card', (nodes) => nodes.length);
+  const persisted = await stars.$$eval('.stars-entry', (nodes) => nodes.length);
   check('星标在本机浏览器持久保存（刷新后仍在）', persisted === 2, `${persisted} 张`);
   await stars.screenshot({ path: path.join(OUT_DIR, 'stars-v1.png') });
 
   // 取消星标
-  await stars.click('.stars-card .star-btn');
+  await stars.click('.stars-entry .star-btn');
   await delays(300);
-  const afterRemove = await stars.$$eval('.stars-card', (nodes) => nodes.length);
+  const afterRemove = await stars.$$eval('.stars-entry', (nodes) => nodes.length);
   check('取消星标后从列表移除', afterRemove === 1, `${afterRemove} 张`);
 
   // 抽屉里也能加星
   await stars.goto(`${BASE}/#/feed?entry=gemini-4-carbon-2026`, { waitUntil: 'networkidle0' });
   await delays(500);
-  const drawerStar = await stars.evaluate(() => ({
-    exists: document.querySelector('.drawer-panel .star-btn') !== null,
-    pressed: document.querySelector('.drawer-panel .star-btn')?.getAttribute('aria-pressed') ?? '',
-  }));
-  check('详情抽屉内也可加星（状态同步）', drawerStar.exists, JSON.stringify(drawerStar));
+  const drawerStar = await stars.evaluate(() => {
+    const button = document.querySelector('.drawer-panel .star-btn');
+    const rect = button?.getBoundingClientRect();
+    return {
+      exists: button !== null,
+      pressed: button?.getAttribute('aria-pressed') ?? '',
+      whiteSpace: button ? window.getComputedStyle(button).whiteSpace : '',
+      width: rect ? Math.round(rect.width) : 0,
+      height: rect ? Math.round(rect.height) : 0,
+    };
+  });
+  check(
+    '详情抽屉内也可加星（文字不竖排/不换行）',
+    drawerStar.exists && drawerStar.whiteSpace === 'nowrap' && drawerStar.height <= 36 && drawerStar.width >= 60,
+    JSON.stringify(drawerStar),
+  );
 
   // 清理测试数据，避免污染用户本地
   await stars.evaluate(() => localStorage.removeItem('aeg.stars.v1'));

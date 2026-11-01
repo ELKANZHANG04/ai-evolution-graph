@@ -1,5 +1,7 @@
 .star-btn {
   display: inline-flex;
+  flex: 0 0 auto;
+  white-space: nowrap;
   align-items: center;
   justify-content: center;
   gap: 4px;
@@ -47,6 +49,7 @@
 }
 
 .star-btn-md .star-btn-label {
+  white-space: nowrap;
   font-size: 11.5px;
   font-weight: 600;
   letter-spacing: 0.02em;

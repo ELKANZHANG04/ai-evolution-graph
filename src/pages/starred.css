@@ -389,3 +389,165 @@
   font-size: 10.5px;
   line-height: 1.6;
 }
+
+
+/* ---------- 自动分类（主题簇）+ 关联之处 ---------- */
+
+.stars-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stars-group {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elev);
+}
+
+.stars-group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.stars-group-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  align-self: center;
+}
+
+.stars-group-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.stars-group-count {
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.stars-group-basis {
+  margin-left: auto;
+  color: var(--text-3);
+  font-size: 10.5px;
+}
+
+.stars-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stars-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.stars-entry:hover {
+  border-color: var(--border);
+  background: var(--bg-elev-2);
+}
+
+.stars-entry-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 7px;
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.stars-entry-date {
+  color: var(--text-3);
+  font-size: 10.5px;
+}
+
+.stars-entry-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 46%;
+  font-size: 12.5px;
+}
+
+.stars-entry-ai {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40%;
+  color: var(--text-3);
+  font-size: 10.5px;
+}
+
+.stars-relations {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 10px 0 0;
+  padding: 8px 0 0;
+  border-top: 1px dashed var(--border);
+  list-style: none;
+}
+
+.stars-relation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.stars-relation-pair {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.stars-relation-reason {
+  flex: 1 1 100%;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+/* 图上自动分类标签 */
+.stars-cluster-label rect {
+  fill: rgba(15, 20, 28, 0.82);
+  stroke: var(--border-strong);
+}
+
+.stars-cluster-label text {
+  fill: var(--text-2);
+  font-size: 10.5px;
+  text-anchor: middle;
+}
+
+.stars-cluster-label {
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .stars-entry-title,
+  .stars-entry-ai {
+    max-width: 100%;
+  }
+}
