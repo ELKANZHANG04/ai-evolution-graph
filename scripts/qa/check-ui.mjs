@@ -613,6 +613,26 @@ try {
     feedInfo.innovationBadges <= feedInfo.cards,
     `${feedInfo.innovationBadges} 个`,
   );
+  const lateReport = await feed.evaluate(() => ({
+    badges: document.querySelectorAll('.feed-card .feed-new-badge').length,
+    lateCards: [...document.querySelectorAll('.feed-card')].filter(
+      (card) => card.getAttribute('data-late-report') === 'true',
+    ).length,
+    normalCards: [...document.querySelectorAll('.feed-card')].filter(
+      (card) => card.getAttribute('data-late-report') === 'false',
+    ).length,
+    tooltips: [...document.querySelectorAll('.feed-card .feed-new-badge')].map(
+      (node) => node.getAttribute('title') ?? '',
+    ),
+  }));
+  check(
+    '延迟 2 天以上入库的条目显示 NEW 标签（并说明延迟天数）',
+    lateReport.lateCards >= 1 &&
+      lateReport.badges === lateReport.lateCards &&
+      lateReport.tooltips.every((title) => title.includes('延迟报道')) &&
+      lateReport.normalCards >= 1,
+    JSON.stringify({ ...lateReport, tooltips: lateReport.tooltips.slice(0, 2) }),
+  );
   const feedFreshness = await feed.evaluate(() => {
     const cutoff = new Date(Date.now() - 180 * 24 * 3600 * 1000).toISOString().slice(0, 10);
     const dates = Array.from(document.querySelectorAll('.feed-card')).map(
@@ -631,7 +651,10 @@ try {
     JSON.stringify({ cutoff: feedFreshness.cutoff, oldest: feedFreshness.minDate, desc: feedFreshness.descending }),
   );
   const feedForbidden = await feed.evaluate(() => {
-    const text = document.body.textContent ?? '';
+    // 只看页头/分区头，不把卡片摘要里的「7 天」等业务数字误判成时间窗 UI
+    const text = Array.from(document.querySelectorAll('.feed-head, .feed-section-head'))
+      .map((node) => node.textContent ?? '')
+      .join(' ');
     return {
       candidate: text.includes('候选晋升'),
       window: text.includes('7 天') || text.includes('30 天'),

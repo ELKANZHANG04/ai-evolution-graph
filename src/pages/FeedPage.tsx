@@ -4,7 +4,7 @@ import { CategoryChips, ImportanceBadge, TypeBadge } from '../components/common/
 import { StarButton } from '../components/common/StarButton';
 import type { HashRoute } from '../hooks/useHashRoute';
 import { ENTRIES, META } from '../lib/data';
-import { formatBuiltAt, formatDate, todayISO } from '../lib/format';
+import { formatBuiltAt, formatDate, isLateReport, lateReportDays, todayISO } from '../lib/format';
 import type { Entry } from '../lib/types';
 import { categoryColor, primaryCategory } from '../theme/categories';
 import '../components/feed/feed.css';
@@ -44,6 +44,8 @@ interface FeedCardProps {
 
 /** 与主线里程碑卡一致的简明标注：日期、类型、贡献度（影响力分数）、类别 */
 function FeedCard({ entry, onSelect }: FeedCardProps): JSX.Element {
+  const lateDays = lateReportDays(entry);
+  const lateReport = isLateReport(entry);
   return (
     <article
       className="feed-card"
@@ -53,6 +55,8 @@ function FeedCard({ entry, onSelect }: FeedCardProps): JSX.Element {
       data-date={entry.date}
       data-added={entry.added_at}
       data-importance={entry.importance}
+      data-late-days={lateDays ?? ''}
+      data-late-report={lateReport ? 'true' : 'false'}
       style={{ borderLeftColor: categoryColor(primaryCategory(entry.categories)) }}
       onClick={() => onSelect(entry)}
       onKeyDown={(event) => {
@@ -66,6 +70,15 @@ function FeedCard({ entry, onSelect }: FeedCardProps): JSX.Element {
         <span className="feed-card-date mono">{formatDate(entry.date)}</span>
         {entry.added_at && (
           <span className="feed-added-date mono">入库 {formatDate(entry.added_at)}</span>
+        )}
+        {lateReport && (
+          <span
+            className="feed-new-badge"
+            title={`延迟报道：事件发生 ${lateDays} 天后才入库`}
+            aria-label={`NEW，延迟 ${lateDays} 天报道`}
+          >
+            NEW
+          </span>
         )}
         <TypeBadge type={entry.type} />
         <span className="feed-card-score">
@@ -124,7 +137,7 @@ export function FeedPage({ route }: FeedPageProps): JSX.Element {
           <p className="feed-kicker mono">LATEST · 最新动态</p>
           <h1>最新动态</h1>
           <p className="feed-sub">
-            每天 08:30 抓取。模型发布、事件与思想不拆栏，统一成一条「最近入库」流：只收最近 5 天入库、且事件发生在近半年内的内容，按时间倒序，每条标出贡献度（影响力分数）。
+            每天 08:30 抓取。模型发布、事件与思想不拆栏，统一成一条「最近入库」流：只收最近 5 天入库、且事件发生在近半年内的内容，按时间倒序，每条标出贡献度（影响力分数）。事件发生 2 天及以上才入库的条目会标 NEW（延迟报道，不等于刚发生）。
           </p>
         </div>
         <dl className="feed-meta">

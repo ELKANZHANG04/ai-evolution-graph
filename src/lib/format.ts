@@ -42,6 +42,28 @@ export function isRecent(entry: Entry, days = 7, now: Date = new Date()): boolea
   return diff >= 0 && diff <= days * 24 * 60 * 60 * 1000;
 }
 
+
+/** 两个 YYYY-MM-DD 之间相差的天数（later - earlier，UTC 对齐）；无效日期返回 null */
+export function daysBetweenISO(earlier: string, later: string): number | null {
+  if (!earlier || !later) return null;
+  const a = Date.parse(`${earlier}T00:00:00Z`);
+  const b = Date.parse(`${later}T00:00:00Z`);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  return Math.round((b - a) / (24 * 60 * 60 * 1000));
+}
+
+/** 事件发生到入库间隔的天数；没有 added_at 或日期非法返回 null */
+export function lateReportDays(entry: Pick<Entry, 'date' | 'added_at'>): number | null {
+  if (!entry.added_at) return null;
+  return daysBetweenISO(entry.date, entry.added_at);
+}
+
+/** 是否属于「延迟报道」：事件发生 2 天及以上才入库（用于 NEW 标签） */
+export function isLateReport(entry: Pick<Entry, 'date' | 'added_at'>, threshold = 2): boolean {
+  const days = lateReportDays(entry);
+  return days !== null && days >= threshold;
+}
+
 export function todayISO(): string {
   const now = new Date();
   const y = now.getFullYear();

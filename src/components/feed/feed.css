@@ -167,6 +167,23 @@
   opacity: 0.85;
 }
 
+/* 延迟报道：事件发生 ≥2 天才入库，用 NEW 提醒「新收录」而非「刚发生」 */
+.feed-new-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border: 1px solid rgba(245, 197, 66, 0.55);
+  border-radius: 999px;
+  background: rgba(245, 197, 66, 0.14);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  color: #f5c542;
+  white-space: nowrap;
+}
+
 /* 创新雷达内联标注（不再单独成栏） */
 .feed-innovation-badge {
   display: inline-flex;
